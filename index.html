@@ -1,0 +1,1774 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Elemental Mirror</title>
+<style>
+  :root { --bg:#090c13; --panel:#141926; --line:#262d42; --fg:#eef1f8; --dim:#8b95b2;
+          --accent:#ffb054; --ok:#57d98a; --bad:#ff5d73;
+          --fire:#ff8a3c; --ice:#9fdcff; --water:#4d9bff; --bolt:#b9a6ff; --magic:#b56cff; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; min-height:100%; background:var(--bg); color:var(--fg);
+              font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  .wrap { display:flex; gap:20px; padding:20px; justify-content:center; align-items:flex-start; }
+  .stagecol { flex:1 1 auto; min-width:0; display:flex; justify-content:center; position:sticky; top:20px; }
+  .stage { position:relative; width:min(100%, calc((100vh - 40px) * var(--ar, 1.3333))); aspect-ratio:var(--ar, 1.3333);
+           background:radial-gradient(ellipse at 50% 40%, #131a2b, #05070c 75%); border:1px solid var(--line);
+           border-radius:16px; overflow:hidden; }
+  .stage video, .stage canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
+  #video { object-fit:cover; transform:scaleX(-1); }
+  #gl, #hud { pointer-events:none; }
+  #intro { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+           gap:14px; text-align:center; padding:24px; }
+  #intro h2 { margin:0; font-size:30px; letter-spacing:.04em; font-weight:800; }
+  #intro p { margin:0; color:var(--dim); max-width:48ch; }
+  #recdot { position:absolute; left:14px; top:12px; font:600 13px/1 ui-monospace,Menlo,Consolas,monospace; color:#fff;
+            background:rgba(200,30,50,.85); border-radius:7px; padding:6px 9px; font-variant-numeric:tabular-nums; }
+  button.big { font:inherit; font-weight:700; font-size:17px; color:#1c0f02; background:var(--accent);
+               border:0; border-radius:12px; padding:13px 22px; cursor:pointer; }
+  button.big:disabled { opacity:.6; cursor:default; }
+  aside { flex:0 0 330px; display:flex; flex-direction:column; gap:12px; }
+  h1 { margin:0; font-size:24px; letter-spacing:.03em; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:13px 15px; }
+  .panel h3 { margin:0 0 9px; font-size:12px; font-weight:600; color:var(--dim); text-transform:uppercase; letter-spacing:.09em; }
+  #status { font-weight:600; font-size:14px; }
+  #status.ok { color:var(--ok); } #status.bad { color:var(--bad); }
+  .chips { display:flex; flex-wrap:wrap; gap:7px; }
+  .chips button { font:inherit; font-size:13px; color:var(--fg); background:#0b0f18; border:1px solid var(--line);
+                  border-radius:9px; padding:7px 11px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+  .chips button:hover { border-color:var(--accent); }
+  .chips button i { width:9px; height:9px; border-radius:50%; flex:none; background:var(--c, var(--dim)); }
+  .chips button.on { background:var(--c, var(--accent)); border-color:var(--c, var(--accent)); color:#0a0d14; font-weight:700; }
+  .chips button.on i { background:#0a0d14; }
+  [data-el=off] { --c:#8b95b2; } [data-el=fire] { --c:var(--fire); } [data-el=ice] { --c:var(--ice); }
+  [data-el=water] { --c:var(--water); } [data-el=bolt] { --c:var(--bolt); } [data-el=magic] { --c:var(--magic); }
+  label.ck { display:flex; align-items:center; gap:8px; font-size:14px; cursor:pointer; }
+  input[type=checkbox] { width:17px; height:17px; margin:0; accent-color:var(--accent); flex:none; }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:14px; margin-top:11px; }
+  .row.first { margin-top:0; }
+  .row input[type=range] { flex:1; max-width:50%; accent-color:var(--accent); }
+  .row label b { font-weight:500; color:var(--dim); font-size:12px; margin-left:4px; font-variant-numeric:tabular-nums; }
+  .meter { flex:1; max-width:50%; height:7px; background:#0b0f18; border:1px solid var(--line); border-radius:5px; overflow:hidden; }
+  .meter i { display:block; height:100%; width:0; background:var(--accent); }
+  select { font:inherit; font-size:14px; color:var(--fg); background:#0b0f18; border:1px solid var(--line);
+           border-radius:8px; padding:6px 8px; max-width:60%; }
+  input[type=color] { width:44px; height:28px; padding:0; border:1px solid var(--line); border-radius:7px; background:#0b0f18; cursor:pointer; }
+  #data { margin:11px 0 0; padding:9px 11px; background:#0b0f18; border:1px solid var(--line); border-radius:8px;
+          font:12px/1.5 ui-monospace,Menlo,Consolas,monospace; white-space:pre-wrap; font-variant-numeric:tabular-nums; }
+  .small { font-size:12px; color:var(--dim); margin:0; }
+  #hint { margin-top:10px; font-size:13px; color:var(--fg); }
+  .stack { display:flex; flex-direction:column; gap:9px; margin-top:11px; }
+  [hidden] { display:none !important; }
+  @media (max-width:900px) { .wrap { flex-direction:column; align-items:stretch; } aside { flex:none; } .stage { width:100%; } .stagecol { position:static; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="stagecol">
+    <div class="stage" id="stage">
+      <video id="video" playsinline muted autoplay></video>
+      <canvas id="gl" hidden></canvas>
+      <canvas id="hud"></canvas>
+      <div id="recdot" hidden>REC 0:00</div>
+      <div id="intro">
+        <h2>ELEMENTAL MIRROR</h2>
+        <p>Fire, ice, water, lightning and magic from your own hands and mouth, lighting up your face and body. Swap the room behind you, blow on a flame, freeze a hand and breathe fire to melt it.</p>
+        <button class="big" id="start">Start camera</button>
+      </div>
+    </div>
+  </div>
+
+  <aside>
+    <h1>Elemental Mirror</h1>
+    <div class="panel"><div id="status">Click Start camera, then allow the camera.</div></div>
+
+    <div class="panel">
+      <h3>Try this</h3>
+      <div class="chips" id="presets">
+        <button data-preset="fireice">Fire and ice</button>
+        <button data-preset="dragon">Dragon breath</button>
+        <button data-preset="frozen">Freeze and melt</button>
+        <button data-preset="candles">Finger candles</button>
+        <button data-preset="storm">Storm</button>
+        <button data-preset="water">Water</button>
+        <button data-preset="wizard">Wizard</button>
+        <button data-preset="fireball">Fireball</button>
+        <button id="reset" type="button">Reset all</button>
+      </div>
+      <p class="small" id="hint"></p>
+    </div>
+
+    <div class="panel">
+      <h3>Left hand</h3>
+      <div class="chips el" data-key="L">
+        <button data-el="off">Off</button><button data-el="fire"><i></i>Fire</button><button data-el="ice"><i></i>Ice</button>
+        <button data-el="water"><i></i>Water</button><button data-el="bolt"><i></i>Lightning</button><button data-el="magic"><i></i>Magic</button>
+      </div>
+      <div class="row"><label for="srcL">Comes out of</label>
+        <select id="srcL"><option value="palm">Palm</option><option value="index">Index fingertip</option><option value="tips">Every fingertip</option><option value="whole">The whole hand</option></select>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Right hand</h3>
+      <div class="chips el" data-key="R">
+        <button data-el="off">Off</button><button data-el="fire"><i></i>Fire</button><button data-el="ice"><i></i>Ice</button>
+        <button data-el="water"><i></i>Water</button><button data-el="bolt"><i></i>Lightning</button><button data-el="magic"><i></i>Magic</button>
+      </div>
+      <div class="row"><label for="srcR">Comes out of</label>
+        <select id="srcR"><option value="palm">Palm</option><option value="index">Index fingertip</option><option value="tips">Every fingertip</option><option value="whole">The whole hand</option></select>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Ball in my palm</h3>
+      <div class="chips el" data-key="ball">
+        <button data-el="off">Off</button><button data-el="fire"><i></i>Fireball</button><button data-el="water"><i></i>Water ball</button><button data-el="magic"><i></i>Magic ball</button>
+      </div>
+      <div class="row"><label for="ballHand">Held in</label>
+        <select id="ballHand"><option value="L">Left hand</option><option value="R">Right hand</option></select>
+      </div>
+      <p class="small" style="margin-top:10px">Hold that hand open and the ball forms on your palm. Bring your other hand close to feed it, poke it, or slap it away. Flick your hand to throw it, or push your palm at the camera to smash it into the screen.</p>
+    </div>
+
+    <div class="panel">
+      <h3>Mouth</h3>
+      <div class="chips el" data-key="M">
+        <button data-el="off">Off</button><button data-el="fire"><i></i>Fire</button><button data-el="ice"><i></i>Ice</button>
+        <button data-el="water"><i></i>Water</button><button data-el="bolt"><i></i>Lightning</button><button data-el="magic"><i></i>Magic</button>
+      </div>
+      <p class="small" style="margin-top:10px">Open your mouth to breathe it out, and turn your head to aim. Purse your lips to blow air instead.</p>
+      <div class="row"><span>Mouth open</span><div class="meter"><i id="m_open"></i></div></div>
+      <div class="row"><label for="mouthsens">Opens easily <b id="mouthsensv"></b></label><input id="mouthsens" type="range" min="0" max="1" step="0.01"></div>
+      <div class="row"><span>Blowing</span><div class="meter"><i id="m_blow"></i></div></div>
+      <div class="row"><label for="blowsens">Blows easily <b id="blowsensv"></b></label><input id="blowsens" type="range" min="0" max="1" step="0.01"></div>
+      <div class="row"><label for="blowpower">Blow strength <b id="blowpowerv"></b></label><input id="blowpower" type="range" min="0" max="1" step="0.01"></div>
+      <div class="stack">
+        <label class="ck"><input type="checkbox" id="blow">Pursed lips blow air</label>
+        <label class="ck"><input type="checkbox" id="mic">Use the microphone, so blowing harder is stronger</label>
+      </div>
+      <div class="row" id="microw" hidden><span>Microphone</span><div class="meter"><i id="m_mic"></i></div></div>
+    </div>
+
+    <div class="panel">
+      <h3>Background</h3>
+      <div class="row first"><label for="bg">Behind me</label>
+        <select id="bg">
+          <option value="room">My real room</option>
+          <option value="studio">Dark studio</option>
+          <option value="city">City at night</option>
+          <option value="volcano">Volcano</option>
+          <option value="icecave">Ice cave</option>
+          <option value="forest">Forest at night</option>
+          <option value="nebula">Deep space</option>
+          <option value="upload">My own picture…</option>
+        </select>
+      </div>
+      <input type="file" id="bgfile" accept="image/*" hidden>
+      <div class="row"><label for="dof">Background blur <b id="dofv"></b></label><input id="dof" type="range" min="0" max="1" step="0.01"></div>
+      <div class="row"><label for="bgbright">Background brightness <b id="bgbrightv"></b></label><input id="bgbright" type="range" min="0" max="1.5" step="0.01"></div>
+    </div>
+
+    <div class="panel">
+      <h3>Light on my body</h3>
+      <div class="row first"><label for="relight">Light from the elements <b id="relightv"></b></label><input id="relight" type="range" min="0" max="2" step="0.01"></div>
+      <div class="row"><label for="amb">My own brightness <b id="ambv"></b></label><input id="amb" type="range" min="0.1" max="1.2" step="0.01"></div>
+      <div class="row"><label for="shape">Depth strength <b id="shapev"></b></label><input id="shape" type="range" min="0" max="2" step="0.01"></div>
+      <div class="row"><label for="view">Show</label>
+        <select id="view">
+          <option value="final">Finished picture</option>
+          <option value="depth">Depth map</option>
+          <option value="normals">Surface directions</option>
+          <option value="mask">Body outline</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Power</h3>
+      <div class="row first"><label for="size">Size <b id="sizev"></b></label><input id="size" type="range" min="0.5" max="2" step="0.01"></div>
+      <div class="row"><label for="force">Force <b id="forcev"></b></label><input id="force" type="range" min="0" max="1" step="0.01"></div>
+      <div class="row"><label for="magic">Magic colour</label><input id="magic" type="color"></div>
+      <div class="stack">
+        <label class="ck"><input type="checkbox" id="fist">Closing your fist puts it out</label>
+        <label class="ck"><input type="checkbox" id="flick">A fast flick of the hand throws it</label>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Look</h3>
+      <div class="row first"><label for="glow">Glow <b id="glowv"></b></label><input id="glow" type="range" min="0" max="1.5" step="0.01"></div>
+      <div class="row"><label for="smoke">Smoke <b id="smokev"></b></label><input id="smoke" type="range" min="0" max="1.5" step="0.01"></div>
+      <div class="row"><label for="quality">Detail</label>
+        <select id="quality"><option value="low">Low (fastest)</option><option value="med">Medium</option><option value="high">High</option><option value="ultra">Ultra</option></select>
+      </div>
+      <div class="chips" style="margin-top:12px">
+        <button id="clear" type="button">Clear the air</button>
+        <button id="record" type="button">Record a clip</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <label class="ck"><input type="checkbox" id="showdata">Show tracking data</label>
+      <pre id="data" hidden></pre>
+    </div>
+
+    <p class="small">A webcam has no depth sensor, so the depth map is estimated live from your body outline, the 478-point 3D mesh of your face and the 3D joints of your hands. The fire, mist, smoke and water are a fluid simulation on your graphics card. Video and sound are processed on this computer and never uploaded.</p>
+  </aside>
+</div>
+
+<script id="facetris" type="application/json">[127,34,139,11,0,37,232,231,120,72,37,39,128,121,47,232,121,128,104,69,67,175,171,148,118,50,101,73,39,40,9,151,108,48,115,131,194,204,211,74,40,185,80,42,183,40,92,186,230,229,118,202,212,214,83,18,17,76,61,146,160,29,30,56,157,173,106,204,194,135,214,192,203,165,98,21,71,68,51,45,4,144,24,23,77,146,91,205,50,187,201,200,18,91,106,182,90,91,181,85,84,17,206,203,36,148,171,140,92,40,39,193,189,244,159,158,28,247,246,161,236,3,196,54,68,104,193,168,8,117,228,31,189,193,55,98,97,99,126,47,100,166,79,218,155,154,26,209,49,131,135,136,150,47,126,217,223,52,53,45,51,134,211,170,140,67,69,108,43,106,91,230,119,120,226,130,247,63,53,52,238,20,242,46,70,156,78,62,96,46,53,63,143,34,227,123,117,111,44,125,19,236,134,51,216,206,205,154,153,22,39,37,167,200,201,208,36,142,100,57,212,202,20,60,99,28,158,157,35,226,113,160,159,27,204,202,210,113,225,46,43,202,204,62,76,77,137,123,116,41,38,72,203,129,142,64,98,240,49,102,64,41,73,74,212,216,207,42,74,184,169,170,211,170,149,176,105,66,69,122,6,168,123,147,187,96,77,90,65,55,107,89,90,180,101,100,120,63,105,104,93,137,227,15,86,85,129,102,49,14,87,86,55,8,9,100,47,121,145,23,22,88,89,179,6,122,196,88,95,96,138,172,136,215,58,172,115,48,219,42,80,81,195,3,51,43,146,61,171,175,199,81,82,38,53,46,225,144,163,110,52,65,66,229,228,117,34,127,234,107,108,69,109,108,151,48,64,235,62,78,191,129,209,126,111,35,143,117,123,50,222,65,52,19,125,141,221,55,65,3,195,197,25,7,33,220,237,44,70,71,139,122,193,245,247,130,33,71,21,162,170,169,150,188,174,196,216,186,92,2,97,167,141,125,241,164,167,37,72,38,12,38,82,13,63,68,71,226,35,111,101,50,205,206,92,165,209,198,217,165,167,97,220,115,218,133,112,243,239,238,241,214,135,169,190,173,133,171,208,32,125,44,237,86,87,178,85,86,179,84,85,180,83,84,181,201,83,182,137,93,132,76,62,183,61,76,184,57,61,185,212,57,186,214,207,187,34,143,156,79,239,237,123,137,177,44,1,4,201,194,32,64,102,129,213,215,138,59,166,219,242,99,97,2,94,141,75,59,235,24,110,228,25,130,226,23,24,229,22,23,230,26,22,231,112,26,232,189,190,243,221,56,190,28,56,221,27,28,222,29,27,223,30,29,224,247,30,225,238,79,20,166,59,75,60,75,240,147,177,215,20,79,166,187,147,213,112,233,244,233,128,245,128,114,188,114,217,174,131,115,220,217,198,236,198,131,134,177,132,58,143,35,124,110,163,7,228,110,25,356,389,368,11,302,267,452,350,349,302,303,269,357,343,277,452,453,357,333,332,297,175,152,377,347,348,330,303,304,270,9,336,337,278,279,360,418,262,431,304,408,409,310,415,407,270,409,410,450,348,347,422,430,434,313,314,17,306,307,375,387,388,260,286,414,398,335,406,418,364,367,416,423,358,327,251,284,298,281,5,4,373,374,253,307,320,321,425,427,411,421,313,18,321,405,406,320,404,405,315,16,17,426,425,266,377,400,369,322,391,269,417,465,464,386,257,258,466,260,388,456,399,419,284,332,333,417,285,8,346,340,261,413,441,285,327,460,328,355,371,329,392,439,438,382,341,256,429,420,360,364,394,379,277,343,437,443,444,283,275,440,363,431,262,369,297,338,337,273,375,321,450,451,349,446,342,467,293,334,282,458,461,462,276,353,383,308,324,325,276,300,293,372,345,447,352,345,340,274,1,19,456,248,281,436,427,425,381,256,252,269,391,393,200,199,428,266,330,329,287,273,422,250,462,328,258,286,384,265,353,342,387,259,257,424,431,430,342,353,276,273,335,424,292,325,307,366,447,345,271,303,302,423,266,371,294,455,460,279,278,294,271,272,304,432,434,427,272,407,408,394,430,431,395,369,400,334,333,299,351,417,168,352,280,411,325,319,320,295,296,336,319,403,404,330,348,349,293,298,333,323,454,447,15,16,315,358,429,279,14,15,316,285,336,9,329,349,350,374,380,252,318,402,403,6,197,419,318,319,325,367,364,365,435,367,397,344,438,439,272,271,311,195,5,281,273,287,291,396,428,199,311,271,268,283,444,445,373,254,339,282,334,296,449,347,346,264,447,454,336,296,299,338,10,151,278,439,455,292,407,415,358,371,355,340,345,372,346,347,280,442,443,282,19,94,370,441,442,295,248,419,197,263,255,359,440,275,274,300,383,368,351,412,465,263,467,466,301,368,389,395,378,379,412,351,419,436,426,322,2,164,393,370,462,461,164,0,267,302,11,12,268,12,13,293,300,301,446,261,340,330,266,425,426,423,391,429,355,437,391,327,326,440,457,438,341,382,362,459,457,461,434,430,394,414,463,362,396,369,262,354,461,457,316,403,402,315,404,403,314,405,404,313,406,405,421,418,406,366,401,361,306,408,407,291,409,408,287,410,409,432,436,410,434,416,411,264,368,383,309,438,457,352,376,401,274,275,4,421,428,262,294,327,358,433,416,367,289,455,439,462,370,326,2,326,370,305,460,455,254,449,448,255,261,446,253,450,449,252,451,450,256,452,451,341,453,452,413,464,463,441,413,414,258,442,441,257,443,442,259,444,443,260,445,444,467,342,445,459,458,250,289,392,290,290,328,460,376,433,435,250,290,392,411,416,433,341,463,464,453,464,465,357,465,412,343,412,399,360,363,440,437,399,456,420,456,363,401,435,288,372,383,353,339,255,249,448,261,255,133,243,190,133,155,112,33,246,247,33,130,25,398,384,286,362,398,414,362,463,341,263,359,467,263,249,255,466,467,260,75,60,166,238,239,79,162,127,139,72,11,37,121,232,120,73,72,39,114,128,47,233,232,128,103,104,67,152,175,148,119,118,101,74,73,40,107,9,108,49,48,131,32,194,211,184,74,185,191,80,183,185,40,186,119,230,118,210,202,214,84,83,17,77,76,146,161,160,30,190,56,173,182,106,194,138,135,192,129,203,98,54,21,68,5,51,4,145,144,23,90,77,91,207,205,187,83,201,18,181,91,182,180,90,181,16,85,17,205,206,36,176,148,140,165,92,39,245,193,244,27,159,28,30,247,161,174,236,196,103,54,104,55,193,8,111,117,31,221,189,55,240,98,99,142,126,100,219,166,218,112,155,26,198,209,131,169,135,150,114,47,217,224,223,53,220,45,134,32,211,140,109,67,108,146,43,91,231,230,120,113,226,247,105,63,52,241,238,242,124,46,156,95,78,96,70,46,63,116,143,227,116,123,111,1,44,19,3,236,51,207,216,205,26,154,22,165,39,167,199,200,208,101,36,100,43,57,202,242,20,99,56,28,157,124,35,113,29,160,27,211,204,210,124,113,46,106,43,204,96,62,77,227,137,116,73,41,72,36,203,142,235,64,240,48,49,64,42,41,74,214,212,207,183,42,184,210,169,211,140,170,176,104,105,69,193,122,168,50,123,187,89,96,90,66,65,107,179,89,180,119,101,120,68,63,104,234,93,227,16,15,85,209,129,49,15,14,86,107,55,9,120,100,121,153,145,22,178,88,179,197,6,196,89,88,96,135,138,136,138,215,172,218,115,219,41,42,81,5,195,51,57,43,61,208,171,199,41,81,38,224,53,225,24,144,110,105,52,66,118,229,117,227,34,234,66,107,69,10,109,151,219,48,235,183,62,191,142,129,126,116,111,143,118,117,50,223,222,52,94,19,141,222,221,65,196,3,197,45,220,44,156,70,139,188,122,245,139,71,162,149,170,150,122,188,196,206,216,92,164,2,167,242,141,241,0,164,37,11,72,12,12,38,13,70,63,71,31,226,111,36,101,205,203,206,165,126,209,217,98,165,97,237,220,218,237,239,241,210,214,169,140,171,32,241,125,237,179,86,178,180,85,179,181,84,180,182,83,181,194,201,182,177,137,132,184,76,183,185,61,184,186,57,185,216,212,186,192,214,187,139,34,156,218,79,237,147,123,177,45,44,4,208,201,32,98,64,129,192,213,138,235,59,219,141,242,97,97,2,141,240,75,235,229,24,228,31,25,226,230,23,229,231,22,230,232,26,231,233,112,232,244,189,243,189,221,190,222,28,221,223,27,222,224,29,223,225,30,224,113,247,225,99,60,240,213,147,215,60,20,166,192,187,213,243,112,244,244,233,245,245,128,188,188,114,174,134,131,220,174,217,236,236,198,134,215,177,58,156,143,124,25,110,7,31,228,25,264,356,368,0,11,267,451,452,349,267,302,269,350,357,277,350,452,357,299,333,297,396,175,377,280,347,330,269,303,270,151,9,337,344,278,360,424,418,431,270,304,409,272,310,407,322,270,410,449,450,347,432,422,434,18,313,17,291,306,375,259,387,260,424,335,418,434,364,416,391,423,327,301,251,298,275,281,4,254,373,253,375,307,321,280,425,411,200,421,18,335,321,406,321,320,405,314,315,17,423,426,266,396,377,369,270,322,269,413,417,464,385,386,258,248,456,419,298,284,333,168,417,8,448,346,261,417,413,285,326,327,328,277,355,329,309,392,438,381,382,256,279,429,360,365,364,379,355,277,437,282,443,283,281,275,363,395,431,369,299,297,337,335,273,321,348,450,349,359,446,467,283,293,282,250,458,462,300,276,383,292,308,325,283,276,293,264,372,447,346,352,340,354,274,19,363,456,281,426,436,425,380,381,252,267,269,393,421,200,428,371,266,329,432,287,422,290,250,328,385,258,384,446,265,342,386,387,257,422,424,430,445,342,276,422,273,424,306,292,307,352,366,345,268,271,302,358,423,371,327,294,460,331,279,294,303,271,304,436,432,427,304,272,408,395,394,431,378,395,400,296,334,299,6,351,168,376,352,411,307,325,320,285,295,336,320,319,404,329,330,349,334,293,333,366,323,447,316,15,315,331,358,279,317,14,316,8,285,9,277,329,350,253,374,252,319,318,403,351,6,419,324,318,325,397,367,365,288,435,397,278,344,439,310,272,311,248,195,281,375,273,291,175,396,199,312,311,268,276,283,445,390,373,339,295,282,296,448,449,346,356,264,454,337,336,299,337,338,151,294,278,455,308,292,415,429,358,355,265,340,372,352,346,280,295,442,282,354,19,370,285,441,295,195,248,197,457,440,274,301,300,368,417,351,465,251,301,389,394,395,379,399,412,419,410,436,322,326,2,393,354,370,461,393,164,267,268,302,12,312,268,13,298,293,301,265,446,340,280,330,425,322,426,391,420,429,437,393,391,326,344,440,438,458,459,461,364,434,394,428,396,262,274,354,457,317,316,402,316,315,403,315,314,404,314,313,405,313,421,406,323,366,361,292,306,407,306,291,408,291,287,409,287,432,410,427,434,411,372,264,383,459,309,457,366,352,401,1,274,4,418,421,262,331,294,358,435,433,367,392,289,439,328,462,326,94,2,370,289,305,455,339,254,448,359,255,446,254,253,449,253,252,450,252,256,451,256,341,452,414,413,463,286,441,414,286,258,441,258,257,442,257,259,443,259,260,444,260,467,445,309,459,250,305,289,290,305,290,460,401,376,435,309,250,392,376,411,433,453,341,464,357,453,465,343,357,412,437,343,399,344,360,440,420,437,456,360,420,363,361,401,288,265,372,353,390,339,249,339,448,255]</script>
+<script type="module">
+const $ = id => document.getElementById(id);
+const statusEl = $("status"), video = $("video"), stage = $("stage");
+function setStatus(text, cls) { statusEl.textContent = text; statusEl.className = cls || ""; }
+const DEMO = location.hash.startsWith("#demo");      // built-in test scene, no camera needed
+const QS = new URLSearchParams(location.search);
+const MP = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+const MODELS = "https://storage.googleapis.com/mediapipe-models/";
+const FACE_MODEL = MODELS + "face_landmarker/face_landmarker/float16/1/face_landmarker.task";
+const HAND_MODEL = MODELS + "hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
+const SEG_MODELS = [MODELS + "image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite",
+                    MODELS + "image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite"];
+const FACE_TRIS = new Uint16Array(JSON.parse($("facetris").textContent));
+const FACE_OVAL = [10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109];
+
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const rnd = (a, b) => a + Math.random() * (b - a);
+const mixn = (a, b, t) => a + (b - a) * t;
+
+// ------------------------------ settings ------------------------------
+const DEFAULTS = { L: "ice", srcL: "palm", R: "fire", srcR: "palm", M: "fire", blow: true, ball: "off", ballHand: "R",
+                   mouthsens: 0.5, blowsens: 0.5, blowpower: 0.4,
+                   size: 1, force: 0.2, magic: "#b56cff", fist: true, flick: true,
+                   bg: "room", dof: 0.4, bgbright: 0.6, relight: 1, amb: 0.62, shape: 1, view: "final",
+                   glow: 0.7, smoke: 0.6, quality: "med", showdata: false, preset: "fireice" };
+let S = Object.assign({}, DEFAULTS);
+try { Object.assign(S, JSON.parse(localStorage.getItem("em_settings2") || "{}")); } catch (e) {}
+if (S.bg === "upload") S.bg = "room";
+function save() { try { localStorage.setItem("em_settings2", JSON.stringify(S)); } catch (e) {} }
+const SLIDERS = ["size", "force", "dof", "bgbright", "relight", "amb", "shape", "glow", "smoke", "mouthsens", "blowsens", "blowpower"];
+const CHECKS = ["blow", "fist", "flick", "showdata"], SELECTS = ["srcL", "srcR", "quality", "bg", "view", "ballHand"];
+const PRESETS = {
+  fireice: { L: "ice", srcL: "palm", R: "fire", srcR: "palm", M: "fire",
+             hint: "Hold up both open hands. Ice pours from your left palm and fire from your right. Bring them together and they turn to steam. Open your mouth to breathe fire." },
+  dragon:  { L: "off", R: "off", M: "fire",
+             hint: "Open your mouth to breathe fire. Turn your head to aim it. With the microphone on, a louder roar makes a bigger flame." },
+  frozen:  { L: "ice", srcL: "whole", R: "off", M: "fire",
+             hint: "Hold up your left hand and watch it freeze over. Then open your mouth and breathe fire on it to melt the ice." },
+  candles: { L: "off", R: "fire", srcR: "tips", M: "off", force: 0.05,
+             hint: "Every finger you raise on your right hand lights a flame. Purse your lips and blow on them." },
+  storm:   { L: "bolt", srcL: "tips", R: "bolt", srcR: "tips", M: "off",
+             hint: "Spread your fingers and lightning jumps between them. Bring both hands into view and it arcs from one to the other." },
+  water:   { L: "water", srcL: "index", R: "water", srcR: "index", M: "off", force: 0.6,
+             hint: "Point a finger to shoot water. A fast flick of an open hand throws a ball of it." },
+  wizard:  { L: "magic", srcL: "palm", R: "bolt", srcR: "index", M: "ice", force: 0.45,
+             hint: "Magic in your left palm, a lightning bolt from your right index finger, and frost breath when you open your mouth." },
+  fireball: { L: "off", R: "off", M: "off", ball: "fire", ballHand: "R",
+             hint: "Hold your right hand open and a fireball forms on your palm. Bring your left hand close to feed it, or slap it away. Flick to throw it, or push your palm at the camera to smash it into the screen." }
+};
+function magicRGB() {
+  const n = parseInt((S.magic || "#b56cff").slice(1), 16);
+  return [((n >> 16) & 255) / 255 * 0.88 + 0.12, ((n >> 8) & 255) / 255 * 0.88 + 0.12, (n & 255) / 255 * 0.88 + 0.12];
+}
+function syncUI() {
+  for (const box of document.querySelectorAll(".chips.el"))
+    for (const b of box.children) b.classList.toggle("on", b.dataset.el === S[box.dataset.key]);
+  for (const b of $("presets").children) b.classList.toggle("on", b.dataset.preset === S.preset);
+  const allOff = S.L === "off" && S.R === "off" && S.M === "off" && S.ball === "off";
+  $("hint").textContent = S.preset && PRESETS[S.preset] ? PRESETS[S.preset].hint
+    : allOff ? "Everything is off. Pick a preset, or choose an element for a hand, your palm or your mouth." : "Your own mix. Pick an element for each hand and for your mouth.";
+  for (const k of SLIDERS) { $(k).value = S[k]; const v = $(k + "v"); if (v) v.textContent = Math.round(S[k] * 100) + "%"; }
+  for (const k of CHECKS) $(k).checked = S[k];
+  for (const k of SELECTS) $(k).value = S[k];
+  $("magic").value = S.magic; $("data").hidden = !S.showdata;
+  document.documentElement.style.setProperty("--magic", S.magic);
+}
+function custom() { S.preset = ""; save(); syncUI(); }
+for (const box of document.querySelectorAll(".chips.el"))
+  for (const b of box.children) b.onclick = () => { S[box.dataset.key] = b.dataset.el; custom(); };
+for (const b of $("presets").querySelectorAll("[data-preset]")) b.onclick = () => {
+  const p = PRESETS[b.dataset.preset];
+  S.ball = "off";
+  for (const k in p) if (k !== "hint") S[k] = p[k];
+  S.preset = b.dataset.preset; save(); syncUI(); clearAir();
+};
+for (const k of SLIDERS) $(k).oninput = e => { S[k] = parseFloat(e.target.value); save(); syncUI(); };
+for (const k of CHECKS) $(k).onchange = e => { S[k] = e.target.checked; save(); syncUI(); };
+$("srcL").onchange = e => { S.srcL = e.target.value; custom(); };
+$("srcR").onchange = e => { S.srcR = e.target.value; custom(); };
+$("ballHand").onchange = e => { S.ballHand = e.target.value; custom(); };
+// Reset: no preset, every element off, and every slider, option and the background back to where it started.
+$("reset").onclick = () => {
+  S = Object.assign({}, DEFAULTS, { L: "off", R: "off", M: "off", ball: "off", preset: "" });
+  save(); syncUI(); clearAir(); resize(true); setBackground();
+  for (const h of [hands.L, hands.R]) h.frost = 0;
+};
+$("view").onchange = e => { S.view = e.target.value; save(); };
+$("magic").oninput = e => { S.magic = e.target.value; save(); syncUI(); };
+$("quality").onchange = e => { S.quality = e.target.value; save(); resize(true); };
+$("bg").onchange = e => { if (e.target.value === "upload") { $("bgfile").click(); e.target.value = S.bg; return; } S.bg = e.target.value; save(); setBackground(); };
+$("bgfile").onchange = e => {
+  const f = e.target.files && e.target.files[0]; if (!f) return;
+  const img = new Image();
+  img.onload = () => { customBg = img; S.bg = "upload"; syncUI(); setBackground(); };
+  img.onerror = () => setStatus("That file is not a picture this browser can open.", "bad");
+  img.src = URL.createObjectURL(f);
+};
+$("clear").onclick = () => clearAir();
+syncUI();
+
+// ------------------------------ WebGL 2 set-up ------------------------------
+let gl = null, W = 640, H = 480, CW = 640, CH = 480;
+const P = {};                                  // shader programs
+let vaoQuad, vaoPart, vaoFace, partBuf, faceBuf;
+// fluid grids: one velocity field carries A (heat, cold, vapour, water), B (coloured plasma + lift) and C (smoke)
+let vel, prs, dvg, crl, fA, fB, fC, velS;
+// body: outline mask, its blurs, the face relief and the finished depth map (r = depth, g = outline)
+let texVideo, texMask, texOver, texFx, texBg, bodyKey = "", mS, bTmp, b1, b2, b3, b4, relief, reliefB, depthT;
+let sceneT, bgBlurT, bloomD = [], bloomU = [];
+const body = { has: false, hasRelief: false, inv: 0, score: 0.8, n: 0 };
+const QUAL = { low: [88, 256, 1], med: [128, 400, 1.5], high: [176, 560, 2], ultra: [224, 760, 2] };
+
+const VS = `#version 300 es
+in vec2 aPos; out vec2 vUv;
+void main(){ vUv = aPos*0.5+0.5; gl_Position = vec4(aPos,0.,1.); }`;
+const VS_SPLAT = `#version 300 es
+in vec2 aPos; uniform vec2 uC, uR; out vec2 vP;
+void main(){ vP = aPos; gl_Position = vec4((uC + aPos*uR)*2.-1., 0., 1.); }`;
+const VS_FACE = `#version 300 es
+in vec3 aV; out float vR;
+void main(){ vR = aV.z; gl_Position = vec4(aV.xy*2.-1., 0., 1.); }`;
+const VS_PART = `#version 300 es
+in vec2 aPos; in vec2 iC; in vec2 iAx; in float iW; in vec4 iCol; in float iKind;
+uniform vec2 uRes; out vec2 vP; out vec4 vCol; out float vKind;
+void main(){
+  float l = length(iAx); vec2 d = l > 1e-3 ? iAx/l : vec2(1.,0.);
+  vec2 p = iC + d*aPos.x*max(l, iW) + vec2(-d.y, d.x)*aPos.y*iW;
+  vP = aPos; vCol = iCol; vKind = iKind;
+  gl_Position = vec4(p.x/uRes.x*2.-1., 1.-p.y/uRes.y*2., 0., 1.);
+}`;
+const HEAD = `#version 300 es
+precision highp float; precision highp sampler2D; in vec2 vUv; out vec4 o;
+`;
+const NOISE = `
+float hash(vec2 p){ p = fract(p*vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x*p.y); }
+vec2 hash2(vec2 p){ float n = hash(p); return vec2(n, hash(p + n + 17.17)); }
+float vnoise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.-2.*f);
+  return mix(mix(hash(i), hash(i+vec2(1.,0.)), f.x), mix(hash(i+vec2(0.,1.)), hash(i+vec2(1.,1.)), f.x), f.y); }
+float fbm(vec2 p){ float s = 0., a = 0.5; for (int i = 0; i < 4; i++) { s += a*vnoise(p); p = p*2.03 + vec2(17.3, 9.1); a *= 0.5; } return s/0.9375; }
+vec3 voronoi(vec2 p){ vec2 n = floor(p), f = fract(p); float d1 = 8., d2 = 8.; vec2 id = vec2(0.);
+  for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) { vec2 g = vec2(float(i), float(j)); vec2 r = g + hash2(n + g) - f; float d = dot(r, r);
+    if (d < d1) { d2 = d1; d1 = d; id = n + g; } else if (d < d2) d2 = d; }
+  return vec3(sqrt(d1), sqrt(d2) - sqrt(d1), hash(id + 3.7)); }
+`;
+// surface direction from the depth map (depth is in units of picture width), in screen space with y up
+const NORMAL = `
+float dAt(vec2 s){ return texture(uDepth, vec2(1.-s.x, 1.-s.y)).r; }
+vec3 bodyNormal(vec2 s, float k){ vec2 e = uDTexel*1.5;
+  float dx = dAt(s + vec2(e.x,0.)) - dAt(s - vec2(e.x,0.)), dy = dAt(s + vec2(0.,e.y)) - dAt(s - vec2(0.,e.y));
+  return normalize(vec3(-dx/(2.*e.x)*k, -dy*uAspect/(2.*e.y)*k, 1.)); }
+`;
+const FS = {
+splat: `#version 300 es
+precision highp float; in vec2 vP; out vec4 o; uniform vec4 uValue; uniform float uRadial;
+void main(){
+  float r2 = dot(vP,vP); if (r2 > 1.) discard;
+  float f = (exp(-3.125*r2) - 0.0439) / 0.9561;
+  vec4 v = uValue;
+  if (uRadial > 0.5) { float r = sqrt(r2); v = vec4(vP/(r+1e-4)*uValue.x*smoothstep(0.,0.12,r), 0., 0.); }
+  o = v*f;
+}`,
+copy: HEAD + `uniform sampler2D uSrc; uniform float uK; void main(){ o = texture(uSrc, vUv)*uK; }`,
+advect: HEAD + `uniform sampler2D uVel, uSrc; uniform vec2 uStage; uniform float uDt, uEdge; uniform vec4 uDecay;
+void main(){
+  vec2 c = vUv - uDt*texture(uVel, vUv).xy/uStage;
+  vec4 s = texture(uSrc, c)*uDecay;
+  vec2 e = min(c, 1.-c);
+  o = s*mix(1., smoothstep(0., 0.025, min(e.x, e.y)), uEdge);
+}`,
+advA: HEAD + `uniform sampler2D uVel, uSrc; uniform vec2 uStage; uniform float uDt; uniform vec4 uDecay, uSub;
+void main(){
+  vec2 c = vUv - uDt*texture(uVel, vUv).xy/uStage;
+  vec4 a = texture(uSrc, c);                                  // heat, cold, vapour, water
+  float k = min(1., uDt*16.);
+  float r1 = min(a.r, a.g*1.6)*k;                             // fire meets ice
+  float r2 = min(a.r, a.a*1.3)*k;                             // fire meets water
+  a.r -= r1 + r2; a.g -= r1*0.62; a.a -= r2*0.45; a.b += (r1 + r2)*1.8;
+  a = max(a*uDecay - uSub, 0.);
+  vec2 e = min(c, 1.-c);
+  a *= smoothstep(0., 0.025, min(e.x, e.y));
+  o = min(a, vec4(3.2, 2.5, 3., 3.));
+}`,
+advC: HEAD + `uniform sampler2D uVel, uSrc, uA; uniform vec2 uStage; uniform float uDt;
+void main(){
+  vec2 c = vUv - uDt*texture(uVel, vUv).xy/uStage;
+  float s = texture(uSrc, c).r*exp(-uDt*0.8);
+  float h = texture(uA, vUv).r;                               // soot forms where a flame cools
+  s += uDt*0.55*smoothstep(0.03, 0.2, h)*(1. - smoothstep(0.3, 0.8, h));
+  vec2 e = min(c, 1.-c);
+  o = vec4(min(max(s - uDt*0.02, 0.), 2.)*smoothstep(0., 0.025, min(e.x, e.y)), 0., 0., 1.);
+}`,
+curl: HEAD + `uniform sampler2D uVel; uniform vec2 uTexel;
+void main(){
+  float L = texture(uVel, vUv - vec2(uTexel.x,0.)).y, R = texture(uVel, vUv + vec2(uTexel.x,0.)).y;
+  float T = texture(uVel, vUv + vec2(0.,uTexel.y)).x, B = texture(uVel, vUv - vec2(0.,uTexel.y)).x;
+  o = vec4(0.5*(R - L - T + B), 0., 0., 1.);
+}`,
+force: HEAD + `uniform sampler2D uVel, uCurl, uA, uB, uC; uniform vec2 uTexel; uniform float uDt, uCurlK, uBuoy;
+void main(){
+  float L = texture(uCurl, vUv - vec2(uTexel.x,0.)).x, R = texture(uCurl, vUv + vec2(uTexel.x,0.)).x;
+  float T = texture(uCurl, vUv + vec2(0.,uTexel.y)).x, B = texture(uCurl, vUv - vec2(0.,uTexel.y)).x;
+  float C = texture(uCurl, vUv).x;
+  vec2 f = 0.5*vec2(abs(T) - abs(B), abs(R) - abs(L));
+  f /= length(f) + 1e-4; f *= uCurlK*C; f.y *= -1.;
+  vec2 v = texture(uVel, vUv).xy + f*uDt;
+  vec4 a = texture(uA, vUv);
+  float lift = a.r*1.0 - a.g*0.3 + a.b*0.5 - a.a*0.55 + texture(uB, vUv).a + texture(uC, vUv).r*0.22;   // hot air and smoke rise, cold mist and water sink
+  v.y += lift*uBuoy*uDt;
+  o = vec4(v, 0., 1.);
+}`,
+div: HEAD + `uniform sampler2D uVel; uniform vec2 uTexel;
+void main(){
+  float L = texture(uVel, vUv - vec2(uTexel.x,0.)).x, R = texture(uVel, vUv + vec2(uTexel.x,0.)).x;
+  float T = texture(uVel, vUv + vec2(0.,uTexel.y)).y, B = texture(uVel, vUv - vec2(0.,uTexel.y)).y;
+  o = vec4(0.5*(R - L + T - B), 0., 0., 1.);
+}`,
+pressure: HEAD + `uniform sampler2D uP, uDiv; uniform vec2 uTexel;
+void main(){
+  float L = texture(uP, vUv - vec2(uTexel.x,0.)).x, R = texture(uP, vUv + vec2(uTexel.x,0.)).x;
+  float T = texture(uP, vUv + vec2(0.,uTexel.y)).x, B = texture(uP, vUv - vec2(0.,uTexel.y)).x;
+  o = vec4((L + R + T + B - texture(uDiv, vUv).x)*0.25, 0., 0., 1.);
+}`,
+grad: HEAD + `uniform sampler2D uP, uVel; uniform vec2 uTexel;
+void main(){
+  float L = texture(uP, vUv - vec2(uTexel.x,0.)).x, R = texture(uP, vUv + vec2(uTexel.x,0.)).x;
+  float T = texture(uP, vUv + vec2(0.,uTexel.y)).x, B = texture(uP, vUv - vec2(0.,uTexel.y)).x;
+  o = vec4(texture(uVel, vUv).xy - 0.5*vec2(R - L, T - B), 0., 1.);
+}`,
+// --- body outline and depth ---
+ema: HEAD + `uniform sampler2D uPrev, uNew; uniform float uK, uInv;
+void main(){ float m = texture(uNew, vUv).r; m = mix(m, 1.-m, uInv); o = vec4(mix(texture(uPrev, vUv).r, m, uK), 0., 0., 1.); }`,
+blur: HEAD + `uniform sampler2D uSrc; uniform vec2 uDir;
+void main(){
+  vec4 s = texture(uSrc, vUv)*0.227027;
+  s += (texture(uSrc, vUv + uDir*1.3846) + texture(uSrc, vUv - uDir*1.3846))*0.316216;
+  s += (texture(uSrc, vUv + uDir*3.2308) + texture(uSrc, vUv - uDir*3.2308))*0.070270;
+  o = s;
+}`,
+face: `#version 300 es
+precision highp float; in float vR; out vec4 o; void main(){ o = vec4(vR, 0., 0., 1.); }`,
+// A body is rounder than its outline is wide: stacking blurs of the outline gives a pillow, and the face mesh adds real relief on top.
+depth: HEAD + `uniform sampler2D uB1, uB2, uB3, uB4, uRelief; uniform float uHasRelief;
+void main(){
+  float m = texture(uB1, vUv).r;
+  float d = 0.10*m + 0.2*texture(uB2, vUv).r + 0.3*texture(uB3, vUv).r + 0.4*texture(uB4, vUv).r;
+  float r = uHasRelief > 0.5 ? texture(uRelief, vUv).r : 0.;
+  o = vec4(d*0.11 + r, m, 0., 1.);
+}`,
+// --- background with depth of field: a disc of samples, where bright points swell into bokeh discs ---
+bgblur: HEAD + `uniform sampler2D uVideo, uBg, uDepth; uniform float uRoom, uRadius, uAspect, uHasBody; uniform vec4 uFit;
+void main(){
+  vec3 acc = vec3(0.); float ws = 0.;
+  for (int i = 0; i < 40; i++) {
+    float fi = float(i), r = sqrt((fi + 0.5)/40.), an = fi*2.39996323;
+    vec2 s = vUv + vec2(cos(an)/uAspect, sin(an))*r*uRadius; vec3 c; float w = 1.;
+    if (uRoom > 0.5) { vec2 cu = clamp(vec2(1.-s.x, 1.-s.y), 0., 1.); c = texture(uVideo, cu).rgb;
+      if (uHasBody > 0.5) w = 1.001 - smoothstep(0.25, 0.55, texture(uDepth, cu).g); }
+    else c = texture(uBg, clamp(vec2(0.5 + (s.x - 0.5)*uFit.x + uFit.z, 0.5 - (s.y - 0.5)*uFit.y + uFit.w), 0., 1.)).rgb;
+    float l = dot(c, vec3(0.3, 0.6, 0.1)); w *= 1. + 9.*l*l*l*l*step(0.002, uRadius);
+    acc += c*w; ws += w;
+  }
+  o = vec4(acc/max(ws, 1e-4), 1.);
+}`,
+// --- the scene: background, the relit body, ice shell, and the fluid, all in high dynamic range ---
+scene: HEAD + `uniform sampler2D uA, uB, uC, uVideo, uDepth, uBgB, uOver, uFx;
+uniform vec2 uTexel, uDTexel, uOTexel;
+uniform float uAmb, uBgBright, uHaze, uTime, uHasOver, uHasFx, uAspect, uHasBody, uRelight, uSmoke, uShape, uBallWob, uBallGain;
+uniform vec4 uBall, uShock; uniform vec3 uBallCol;
+uniform vec4 uLP[12]; uniform vec3 uLC[12]; uniform int uNL;
+` + NOISE + NORMAL + `
+float luma(vec3 c){ return dot(c, vec3(0.3, 0.6, 0.1)); }
+void main(){
+  vec2 asp = vec2(uAspect, 1.);
+  vec4 a = texture(uA, vUv), b = texture(uB, vUv); float sm = texture(uC, vUv).r;
+  vec4 aR = texture(uA, vUv + vec2(uTexel.x,0.)), aL = texture(uA, vUv - vec2(uTexel.x,0.));
+  vec4 aT = texture(uA, vUv + vec2(0.,uTexel.y)), aB = texture(uA, vUv - vec2(0.,uTexel.y));
+  vec2 gH = vec2(aR.r - aL.r, aT.r - aB.r) + 0.7*vec2(aR.b - aL.b, aT.b - aB.b) + 0.4*vec2(aR.g - aL.g, aT.g - aB.g);
+  vec2 gW = vec2(aR.a - aL.a, aT.a - aB.a);
+  float wa = smoothstep(0.22, 0.6, a.a);
+
+  // shell of ice: thickness comes from a drawn layer, the facets and cracks from cell noise
+  float cover = 0., thick = 0.; vec3 nIce = vec3(0., 0., 1.); vec3 vor = vec3(1., 1., 0.);
+  if (uHasOver > 0.5) {
+    vec2 ou = vec2(vUv.x, 1. - vUv.y); vec4 ov = texture(uOver, ou); cover = ov.a; thick = ov.r;
+    if (cover > 0.004) {
+      vec2 e = uOTexel*2.;
+      vec2 gT = vec2(texture(uOver, ou + vec2(e.x,0.)).r - texture(uOver, ou - vec2(e.x,0.)).r,
+                     texture(uOver, ou - vec2(0.,e.y)).r - texture(uOver, ou + vec2(0.,e.y)).r);
+      vor = voronoi(vUv*asp*44.);
+      vec2 tilt = hash2(vec2(vor.z*91.7, vor.z*33.1)) - 0.5;
+      nIce = normalize(vec3(-gT*3.2 + tilt*0.95*cover, 1.));
+    }
+  }
+  // the ball on the palm is drawn as a real sphere: uBall holds its centre, radius and kind (1 fire, 2 water, 3 magic)
+  float bk = uBall.w, bin = 0., bl = 9.; vec3 bn = vec3(0., 0., 1.);
+  if (bk > 0.5) {
+    vec2 bd = (vUv - uBall.xy)*asp/max(uBall.z, 1e-4); float bang = atan(bd.y, bd.x);
+    bd /= 1. + uBallWob*0.14*sin(3.*bang + uTime*13.) + 0.03*sin(5.*bang - uTime*6.);     // it wobbles when touched
+    bl = length(bd);
+    if (bl < 1.) { bn = vec3(bd, sqrt(1. - bl*bl)); bin = smoothstep(1., 0.93, bl); }
+  }
+  vec2 shk = vec2(0.); float ring = 0.;                        // a burst sends a ring through the picture
+  if (uShock.w > 0.002) { vec2 sd = (vUv - uShock.xy)*asp; float sl = length(sd);
+    ring = exp(-pow((sl - uShock.z)/0.045, 2.))*uShock.w; shk = sd/(sl + 1e-4)/asp*ring*0.035; }
+  vec2 off = gH*uHaze + gW*wa*0.03 + nIce.xy*0.035*cover + shk; // heat shimmer, water and ice all bend what is behind them
+  if (bk > 1.5 && bk < 2.5) off += (-bn.xy*(1. - bn.z)*1.5 - bn.xy*0.3)*bin*vec2(uBall.z/uAspect, uBall.z);
+  vec2 cu = clamp(vec2(1. - vUv.x, 1. - vUv.y) - off, 0., 1.);
+  vec3 vid = texture(uVideo, cu).rgb;
+  vec2 dm = uHasBody > 0.5 ? texture(uDepth, cu).rg : vec2(0., 1.);
+  float m = uHasBody > 0.5 ? smoothstep(0.36, 0.62, dm.g) : 1.;
+
+  // which way the surface faces: the depth map, plus fine relief read from the picture itself
+  vec3 n = uHasBody > 0.5 ? bodyNormal(vUv + off, uShape) : vec3(0., 0., 1.);
+  float px = 0.0016;
+  vec2 gl2 = vec2(luma(texture(uVideo, cu - vec2(px,0.)).rgb) - luma(texture(uVideo, cu + vec2(px,0.)).rgb),
+                  luma(texture(uVideo, cu - vec2(0.,px*uAspect)).rgb) - luma(texture(uVideo, cu + vec2(0.,px*uAspect)).rgb));
+  n = normalize(vec3(n.xy - gl2*0.9*min(uShape, 1.), n.z));
+  n = normalize(mix(n, nIce, cover*0.85));
+
+  vec3 Pp = vec3(vUv*asp, dm.r*uAspect*m*uShape);
+  vec3 Lp = vec3(0.), Lb = vec3(0.), Ls = vec3(0.), Li = vec3(0.), Lq = vec3(0.);
+  for (int i = 0; i < 12; i++) { if (i >= uNL) break;
+    vec3 d = vec3(uLP[i].xy*asp, uLP[i].w) - Pp; float r2 = uLP[i].z*uLP[i].z, d2 = dot(d, d);
+    float at = 1./(1. + d2/r2); vec3 l = d*inversesqrt(d2 + 1e-6);
+    Lp += uLC[i]*at*clamp((dot(n, l) + 0.28)/1.28, 0., 1.);
+    vec3 hv = normalize(l + vec3(0., 0., 1.));
+    Ls += uLC[i]*at*pow(max(dot(n, hv), 0.), 20.);
+    Li += uLC[i]*at*pow(max(dot(nIce, hv), 0.), 70.);
+    Lq += uLC[i]*at*pow(max(dot(bn, hv), 0.), 50.);
+    Lb += uLC[i]/(1. + (dot(d.xy, d.xy) + 0.16)/r2);
+  }
+  vec3 person = vid*(uAmb + 2.6*(1. - exp(-Lp*uRelight/2.6))) + Ls*uRelight*0.16*(0.25 + luma(vid));
+  vec3 bg = texture(uBgB, clamp(vUv + off, 0., 1.)).rgb;
+  bg *= uBgBright + 1.6*(1. - exp(-Lb*uRelight*0.4/1.6));
+  vec3 col = mix(bg, person, m);
+
+  if (cover > 0.004) {
+    col = mix(col, col*vec3(0.5, 0.77, 1.) + vec3(0.03, 0.09, 0.16), cover*0.8);
+    float frost = cover*(1. - smoothstep(0.1, 0.7, thick))*0.6 + cover*fbm(vUv*asp*90.)*0.3;
+    col = mix(col, vec3(0.8, 0.91, 1.)*(0.3 + uAmb*0.5) + Lp*0.5, clamp(frost, 0., 1.));
+    float crack = (1. - smoothstep(0., 0.04, vor.y))*cover;
+    col += vec3(0.65, 0.88, 1.)*crack*(0.16 + 0.5*luma(Lp));
+    float key = pow(max(dot(nIce, normalize(vec3(-0.35, 0.5, 0.8))), 0.), 44.);
+    col += (vec3(1.1)*key + Li*2.6)*cover;
+    col += vec3(0.4, 0.72, 1.)*pow(1. - nIce.z, 2.)*cover*0.75;
+  }
+  if (bk > 0.5) {
+    float fr = pow(1. - bn.z, 2.5);
+    if (bin > 0.) {
+      if (bk < 1.5) {                                           // fireball: molten light under a darker, cracking crust
+        float n1 = fbm(bn.xy*2.6/(0.6 + bn.z) + vec2(uTime*0.25, -uTime*0.7)), n2 = fbm(bn.xy*7. + vec2(-uTime*0.4, -uTime*1.3));
+        float T = 0.3 + 1.6*n1*n1 + 0.5*n2 + 0.55*fr;
+        col = mix(col, vec3(2.4*T, 1.0*T*T, 0.32*T*T*T)*uBallGain, bin);
+      } else if (bk < 2.5) {                                    // water ball: you see through it, bent and tinted, with a bright rim
+        float key = pow(max(dot(bn, normalize(vec3(-0.4, 0.55, 0.73))), 0.), 70.), back = pow(max(dot(bn, normalize(vec3(0.45, -0.55, 0.7))), 0.), 6.);
+        vec3 w = col*vec3(0.62, 0.86, 1.) + vec3(0.01, 0.06, 0.14) + vec3(0.45, 0.72, 1.)*fr*0.85 + vec3(0.3, 0.6, 0.9)*back*0.22;
+        col = mix(col, w, bin) + (vec3(1.6)*key + Lq*2.4)*bin;
+      } else {                                                  // magic orb: light swirling around a white-hot centre
+        float sa2 = uTime*1.1 + bl*3.; vec2 q = mat2(cos(sa2), -sin(sa2), sin(sa2), cos(sa2))*bn.xy;
+        float sw = fbm(q*3.4 + vec2(0., uTime*0.3)), sw2 = fbm(bn.xy*6. - vec2(uTime*0.7, 0.));
+        vec3 orb = uBallCol*(0.18 + 1.5*sw*sw + 0.6*sw2*fr) + vec3(1.)*pow(bn.z, 9.)*0.7 + uBallCol*fr*0.9;
+        col = mix(col, col*0.25 + orb*uBallGain, bin*mix(0.6, 1., uBallGain));
+      }
+    }
+    if (bk < 1.5 || bk > 2.5) col += uBallCol*exp(-max(bl - 0.95, 0.)*5.5)*(1. - bin)*(bk < 1.5 ? 0.5 : 0.28)*uBallGain;
+  }
+  col += vec3(0.85, 0.92, 1.)*ring*0.22;
+  // water: a surface with a highlight
+  vec3 nw = normalize(vec3(-gW*4., 1.));
+  float spec = pow(max(dot(nw, normalize(vec3(-0.35, 0.55, 0.75))), 0.), 30.);
+  vec3 wcol = col*vec3(0.55, 0.8, 1.) + vec3(0.02, 0.1, 0.22) + (1. - nw.z)*vec3(0.3, 0.55, 0.85);
+  col = mix(col, wcol, wa*0.72) + spec*wa*1.6;
+  // cold mist with glints of frost, and vapour
+  if (a.g + a.b > 0.004) {
+    float det = fbm(vUv*asp*vec2(11., 9.) + vec2(uTime*0.12, uTime*0.45));
+    float ia = 1. - exp(-a.g*(0.5 + 0.95*det)*0.85);
+    float glint = step(0.9972, hash(floor(gl_FragCoord.xy/2.) + floor(uTime*14.)))*min(a.g, 1.);
+    col = mix(col, vec3(0.76, 0.9, 1.)*(0.55 + uAmb*0.5) + Lp*0.22, ia*0.7) + vec3(1.3, 1.6, 1.9)*glint;
+    float sa = 1. - exp(-a.b*(0.5 + 0.9*det)*0.9);
+    col = mix(col, vec3(0.9, 0.93, 0.97)*(0.4 + uAmb*0.5) + Lb*0.25, sa*0.8);
+  }
+  // smoke and fire share two layers of rising noise, which carve the flame into tongues
+  if (a.r + sm > 0.004) {
+    float f1 = fbm(vUv*asp*vec2(13., 8.5) + vec2(0., -uTime*2.5)), f2 = fbm(vUv*asp*vec2(37., 25.) + vec2(4.1, -uTime*4.8));
+    float sk = 1. - exp(-sm*max(f1*1.7 - 0.35, 0.)*1.6*uSmoke);
+    float under = texture(uA, vUv - vec2(0., 0.04)).r;
+    col = mix(col, vec3(0.05, 0.045, 0.042)*(0.5 + uAmb) + vec3(1., 0.42, 0.1)*min(under, 1.6)*0.22, sk*0.62);
+    float hd = a.r;
+    float h = hd*(0.66 + 0.7*f1) - (1. - f2)*0.2*smoothstep(0., 0.7, hd);
+    h = max(h, 0.)*smoothstep(0., 0.3, hd);
+    col = col*(1. - smoothstep(0.3, 2.2, h)*0.62) + vec3(2.2*h, 0.9*h*h, 0.3*h*h*h);   // dark red, orange, yellow, white-hot
+  }
+  col += max(b.rgb, 0.)*1.9;                                    // plasma and magic
+  if (uHasFx > 0.5) col += texture(uFx, vec2(vUv.x, 1. - vUv.y)).rgb*2.4;
+  o = vec4(col, 1.);
+}`,
+part: `#version 300 es
+precision highp float; in vec2 vP; in vec4 vCol; in float vKind; out vec4 o;
+void main(){
+  float r2 = dot(vP, vP), I;
+  if (vKind < 0.5) I = exp(-r2*4.5);                                             // ember, drop, streak
+  else if (vKind < 1.5) { vec2 q = abs(vP);                                      // four-point sparkle
+    I = (max(exp(-q.x*3. - q.y*26.), exp(-q.y*3. - q.x*26.)) + exp(-r2*40.))*(1. - smoothstep(0.75, 1., max(q.x, q.y))); }
+  else { float m = 0.;                                                           // six-armed snow crystal
+    for (int k = 0; k < 3; k++) { float an = float(k)*1.0472; vec2 q = vec2(vP.x*cos(an) + vP.y*sin(an), -vP.x*sin(an) + vP.y*cos(an));
+      m = max(m, exp(-abs(q.y)*22.)*(1. - smoothstep(0.65, 1., abs(q.x)))); }
+    I = m + exp(-r2*30.); }
+  o = vec4(vCol.rgb*vCol.a*I, 0.);
+}`,
+bdown: HEAD + `uniform sampler2D uSrc; uniform vec2 uT; uniform float uThr;
+void main(){
+  vec3 c = texture(uSrc, vUv).rgb*0.5 + 0.125*(texture(uSrc, vUv + uT).rgb + texture(uSrc, vUv - uT).rgb
+         + texture(uSrc, vUv + vec2(uT.x, -uT.y)).rgb + texture(uSrc, vUv + vec2(-uT.x, uT.y)).rgb);
+  if (uThr > 0.) { float l = max(c.r, max(c.g, c.b)); c *= smoothstep(uThr, uThr + 0.7, l); }
+  o = vec4(c, 1.);
+}`,
+bup: HEAD + `uniform sampler2D uSrc, uAdd; uniform vec2 uT;
+void main(){
+  vec3 c = (texture(uSrc, vUv + vec2(2.*uT.x, 0.)).rgb + texture(uSrc, vUv - vec2(2.*uT.x, 0.)).rgb
+          + texture(uSrc, vUv + vec2(0., 2.*uT.y)).rgb + texture(uSrc, vUv - vec2(0., 2.*uT.y)).rgb)/12.
+         + (texture(uSrc, vUv + uT).rgb + texture(uSrc, vUv - uT).rgb
+          + texture(uSrc, vUv + vec2(uT.x, -uT.y)).rgb + texture(uSrc, vUv + vec2(-uT.x, uT.y)).rgb)/6.;
+  o = vec4(c*0.72 + texture(uAdd, vUv).rgb, 1.);
+}`,
+final: HEAD + `uniform sampler2D uScene, uBloom, uDepth; uniform vec2 uDTexel, uShake; uniform float uGlow, uAspect, uShape; uniform int uView;
+` + NORMAL + `
+void main(){
+  vec2 su = clamp(vUv + uShake, 0., 1.);
+  vec3 c = texture(uScene, su).rgb + texture(uBloom, su).rgb*uGlow*0.5;
+  c = mix(c, 0.72 + 0.28*(1. - exp(-(c - 0.72)/0.28)), step(0.72, c));        // highlights roll off instead of clipping
+  vec2 q = (vUv - 0.5)*vec2(1.15, 1.); c *= 1. - 0.32*dot(q, q)*dot(q, q)*4.;
+  if (uView == 1) c = vec3(dAt(vUv)*6.);
+  else if (uView == 2) c = bodyNormal(vUv, uShape)*0.5 + 0.5;
+  else if (uView == 3) c = vec3(texture(uDepth, vec2(1.-vUv.x, 1.-vUv.y)).g);
+  o = vec4(c, 1.);
+}`
+};
+
+function mkProg(vs, fs, attribs) {
+  const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error("shader: " + gl.getShaderInfoLog(s)); return s; };
+  const p = gl.createProgram();
+  gl.attachShader(p, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fs));
+  (attribs || ["aPos"]).forEach((n, i) => gl.bindAttribLocation(p, i, n));
+  gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error("program: " + gl.getProgramInfoLog(p));
+  const u = {};
+  for (let i = 0, n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS); i < n; i++) {
+    const name = gl.getActiveUniform(p, i).name; u[name.replace(/\[0\]$/, "")] = gl.getUniformLocation(p, name);
+  }
+  return { p, u };
+}
+function mkTarget(w, h, ifmt, fmt, filter) {
+  const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texImage2D(gl.TEXTURE_2D, 0, ifmt, w, h, 0, fmt, gl.HALF_FLOAT, null);
+  const fbo = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+  gl.viewport(0, 0, w, h); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+  return { tex, fbo, w, h, free() { gl.deleteTexture(tex); gl.deleteFramebuffer(fbo); } };
+}
+function mkDouble(w, h, ifmt, fmt, filter) {
+  let a = mkTarget(w, h, ifmt, fmt, filter), b = mkTarget(w, h, ifmt, fmt, filter);
+  return { w, h, get read() { return a; }, get write() { return b; }, swap() { const t = a; a = b; b = t; }, free() { a.free(); b.free(); } };
+}
+function mkImageTex(rgba) {
+  const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(rgba || [12, 14, 20, 255]));
+  return t;
+}
+const MAXP = 5000, partData = new Float32Array(MAXP * 10), faceData = new Float32Array(468 * 3);
+function initGL() {
+  gl = $("gl").getContext("webgl2", { alpha: false, antialias: false, depth: false, stencil: false, powerPreference: "high-performance" });
+  if (!gl) throw new Error("this browser has no WebGL 2. Try a current Chrome, Edge, Firefox or Safari.");
+  if (!gl.getExtension("EXT_color_buffer_float") && !gl.getExtension("EXT_color_buffer_half_float"))
+    throw new Error("this graphics card cannot run the fluid simulation.");
+  for (const k in FS) P[k] = k === "splat" ? mkProg(VS_SPLAT, FS[k]) : k === "face" ? mkProg(VS_FACE, FS[k], ["aV"])
+    : k === "part" ? mkProg(VS_PART, FS[k], ["aPos", "iC", "iAx", "iW", "iCol", "iKind"]) : mkProg(VS, FS[k]);
+  const quad = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+  vaoQuad = gl.createVertexArray(); gl.bindVertexArray(vaoQuad);
+  gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+  vaoPart = gl.createVertexArray(); gl.bindVertexArray(vaoPart);
+  gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+  partBuf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, partBuf); gl.bufferData(gl.ARRAY_BUFFER, partData.byteLength, gl.DYNAMIC_DRAW);
+  [[1, 2, 0], [2, 2, 8], [3, 1, 16], [4, 4, 20], [5, 1, 36]].forEach(([loc, size, offs]) => {
+    gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 40, offs); gl.vertexAttribDivisor(loc, 1); });
+  vaoFace = gl.createVertexArray(); gl.bindVertexArray(vaoFace);
+  faceBuf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, faceBuf); gl.bufferData(gl.ARRAY_BUFFER, faceData.byteLength, gl.DYNAMIC_DRAW);
+  gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.createBuffer()); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, FACE_TRIS, gl.STATIC_DRAW);
+  gl.bindVertexArray(vaoQuad);
+  gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+  texVideo = mkImageTex(); texOver = mkImageTex([0, 0, 0, 0]); texFx = mkImageTex([0, 0, 0, 0]); texBg = mkImageTex(); texMask = mkImageTex([255, 255, 255, 255]);
+  vr.pbo = gl.createBuffer();
+  buildGrids();
+}
+let gridKey = "";
+function buildGrids() {
+  const q = QUAL[S.quality] || QUAL.med, ar = W / H;
+  const sh = q[0], sw = Math.max(8, Math.round(sh * ar)), dh = q[1], dw = Math.max(8, Math.round(dh * ar));
+  const key = sw + "x" + sh + "/" + dw + "x" + dh + "/" + CW + "x" + CH;
+  if (key === gridKey) return; gridKey = key;
+  for (const t of [vel, prs, fA, fB, fC, dvg, crl, velS, sceneT, bgBlurT, ...bloomD, ...bloomU]) if (t) t.free();
+  vel = mkDouble(sw, sh, gl.RG16F, gl.RG, gl.LINEAR);
+  prs = mkDouble(sw, sh, gl.R16F, gl.RED, gl.NEAREST);
+  dvg = mkTarget(sw, sh, gl.R16F, gl.RED, gl.NEAREST);
+  crl = mkTarget(sw, sh, gl.R16F, gl.RED, gl.NEAREST);
+  fA = mkDouble(dw, dh, gl.RGBA16F, gl.RGBA, gl.LINEAR);
+  fB = mkDouble(dw, dh, gl.RGBA16F, gl.RGBA, gl.LINEAR);
+  fC = mkDouble(dw, dh, gl.R16F, gl.RED, gl.LINEAR);
+  vr.w = 64; vr.h = Math.max(8, Math.round(64 / ar)); vr.ok = false; vr.data = new Float32Array(vr.w * vr.h * 4);
+  if (vr.sync) { gl.deleteSync(vr.sync); vr.sync = null; } vr.ready = false;
+  velS = mkTarget(vr.w, vr.h, gl.RGBA16F, gl.RGBA, gl.LINEAR);
+  gl.bindBuffer(gl.PIXEL_PACK_BUFFER, vr.pbo); gl.bufferData(gl.PIXEL_PACK_BUFFER, vr.data.byteLength, gl.DYNAMIC_COPY); gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+  sceneT = mkTarget(CW, CH, gl.RGBA16F, gl.RGBA, gl.LINEAR);
+  bgBlurT = mkTarget(Math.max(8, CW >> 1), Math.max(8, CH >> 1), gl.RGBA16F, gl.RGBA, gl.LINEAR);
+  bloomD = []; bloomU = [];
+  for (let i = 1; i <= 5; i++) { const w = Math.max(4, CW >> i), h = Math.max(4, CH >> i);
+    bloomD.push(mkTarget(w, h, gl.RGBA16F, gl.RGBA, gl.LINEAR)); if (i < 5) bloomU.push(mkTarget(w, h, gl.RGBA16F, gl.RGBA, gl.LINEAR)); }
+}
+function buildBody() {
+  const BW = 384, BH = Math.max(8, Math.round(384 * H / W)), key = BW + "x" + BH;
+  if (key === bodyKey) return; bodyKey = key;
+  for (const t of [mS, bTmp, b1, b2, b3, b4, relief, reliefB, depthT]) if (t) t.free();
+  mS = mkDouble(BW, BH, gl.R16F, gl.RED, gl.LINEAR);
+  [bTmp, b1, b2, b3, b4, relief, reliefB] = [0, 0, 0, 0, 0, 0, 0].map(() => mkTarget(BW, BH, gl.R16F, gl.RED, gl.LINEAR));
+  depthT = mkTarget(BW, BH, gl.RG16F, gl.RG, gl.LINEAR);
+}
+function clearAir() {
+  parts.length = 0; shots.length = 0; bolts.length = 0; ball.state = "none"; ball.on = 0;
+  if (!gl || !vel) return;
+  gl.clearColor(0, 0, 0, 0);
+  for (const t of [vel.read, vel.write, prs.read, prs.write, fA.read, fA.write, fB.read, fB.write, fC.read, fC.write]) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, t.fbo); gl.clear(gl.COLOR_BUFFER_BIT); }
+}
+const bindTex = (unit, tex) => { gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, tex); };
+function target(t) {
+  if (t) { gl.bindFramebuffer(gl.FRAMEBUFFER, t.fbo); gl.viewport(0, 0, t.w, t.h); }
+  else { gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight); }
+}
+function draw(t) { target(t); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); }
+function use(p, tex) { gl.useProgram(p.p); let i = 0; for (const k in tex) { gl.uniform1i(p.u[k], i); bindTex(i++, tex[k]); } return p.u; }
+
+// ------------------------------ fluid simulation ------------------------------
+// Splats waiting to be stamped into the grids this frame. Positions and radii are in stage pixels (y down).
+const Q = { vel: [], A: [], B: [] };
+const splatVel = (x, y, r, vx, vy, radial) => { Q.vel.push(x, y, r, vx, -vy, 0, 0, radial ? 1 : 0); };
+const splatA = (x, y, r, heat, cold, vapour, water) => { Q.A.push(x, y, r, heat, cold, vapour, water, 0); };
+const splatB = (x, y, r, cr, cg, cb, lift) => { Q.B.push(x, y, r, cr, cg, cb, lift, 0); };
+function flush(list, t) {
+  if (!list.length) return;
+  const u = P.splat.u; target(t);
+  for (let i = 0; i < list.length; i += 8) {
+    gl.uniform2f(u.uC, list[i] / W, 1 - list[i + 1] / H);
+    gl.uniform2f(u.uR, list[i + 2] * 2.5 / W, list[i + 2] * 2.5 / H);
+    gl.uniform4f(u.uValue, list[i + 3], list[i + 4], list[i + 5], list[i + 6]);
+    gl.uniform1f(u.uRadial, list[i + 7]);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+  list.length = 0;
+}
+function stepSim(dt) {
+  const tx = 1 / vel.w, ty = 1 / vel.h;
+  gl.bindVertexArray(vaoQuad);
+  gl.useProgram(P.splat.p); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE);
+  flush(Q.vel, vel.read); flush(Q.A, fA.read); flush(Q.B, fB.read);
+  gl.disable(gl.BLEND);
+  let u = use(P.curl, { uVel: vel.read.tex }); gl.uniform2f(u.uTexel, tx, ty); draw(crl);
+  u = use(P.force, { uVel: vel.read.tex, uCurl: crl.tex, uA: fA.read.tex, uB: fB.read.tex, uC: fC.read.tex });
+  gl.uniform2f(u.uTexel, tx, ty); gl.uniform1f(u.uDt, dt); gl.uniform1f(u.uCurlK, 15); gl.uniform1f(u.uBuoy, H * 0.95); draw(vel.write); vel.swap();
+  u = use(P.div, { uVel: vel.read.tex }); gl.uniform2f(u.uTexel, tx, ty); draw(dvg);
+  u = use(P.copy, { uSrc: prs.read.tex }); gl.uniform1f(u.uK, 0.8); draw(prs.write); prs.swap();
+  u = use(P.pressure, { uP: prs.read.tex, uDiv: dvg.tex }); gl.uniform2f(u.uTexel, tx, ty);
+  for (let i = 0; i < 22; i++) { bindTex(0, prs.read.tex); draw(prs.write); prs.swap(); }
+  u = use(P.grad, { uP: prs.read.tex, uVel: vel.read.tex }); gl.uniform2f(u.uTexel, tx, ty); draw(vel.write); vel.swap();
+  u = use(P.advect, { uVel: vel.read.tex, uSrc: vel.read.tex }); gl.uniform2f(u.uStage, W, H); gl.uniform1f(u.uDt, dt);
+  const dv = Math.exp(-dt * 0.7); gl.uniform4f(u.uDecay, dv, dv, dv, dv); gl.uniform1f(u.uEdge, 0); draw(vel.write); vel.swap();
+  const db = Math.exp(-dt * 1.7); gl.uniform4f(u.uDecay, db, db, db, db); gl.uniform1f(u.uEdge, 1);
+  bindTex(0, vel.read.tex); bindTex(1, fB.read.tex); draw(fB.write); fB.swap();
+  u = use(P.advC, { uVel: vel.read.tex, uSrc: fC.read.tex, uA: fA.read.tex }); gl.uniform2f(u.uStage, W, H); gl.uniform1f(u.uDt, dt); draw(fC.write); fC.swap();
+  u = use(P.advA, { uVel: vel.read.tex, uSrc: fA.read.tex }); gl.uniform2f(u.uStage, W, H); gl.uniform1f(u.uDt, dt);
+  gl.uniform4f(u.uDecay, Math.exp(-dt * 2.3), Math.exp(-dt * 1.1), Math.exp(-dt * 0.75), Math.exp(-dt * 0.5));
+  gl.uniform4f(u.uSub, dt * 0.85, dt * 0.09, dt * 0.03, dt * 0.12); draw(fA.write); fA.swap();
+}
+// The sparks ride the same air as the flames: a small copy of the velocity field is read back one frame late, without stalling the GPU.
+const vr = { pbo: null, sync: null, ready: false, ok: false, off: false, w: 64, h: 36, data: null };
+function readVelStart() {
+  if (vr.off || vr.sync || vr.ready) return;
+  try {
+    const u = use(P.copy, { uSrc: vel.read.tex }); gl.uniform1f(u.uK, 1); draw(velS);
+    gl.bindBuffer(gl.PIXEL_PACK_BUFFER, vr.pbo);
+    gl.readPixels(0, 0, vr.w, vr.h, gl.RGBA, gl.FLOAT, 0);
+    gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+    if (gl.getError() !== gl.NO_ERROR) { vr.off = true; return; }
+    vr.sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0); gl.flush();
+  } catch (e) { vr.off = true; }
+}
+function readVelPoll() {
+  if (vr.sync) {
+    const s = gl.clientWaitSync(vr.sync, 0, 0);
+    if (s === gl.TIMEOUT_EXPIRED) return;
+    gl.deleteSync(vr.sync); vr.sync = null;
+    vr.ready = s !== gl.WAIT_FAILED;                              // collect it on the next frame, once the browser has the copy in hand
+    return;
+  }
+  if (!vr.ready) return;
+  vr.ready = false;
+  gl.bindBuffer(gl.PIXEL_PACK_BUFFER, vr.pbo); gl.getBufferSubData(gl.PIXEL_PACK_BUFFER, 0, vr.data); gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+  vr.ok = true;
+}
+const fv = { x: 0, y: 0 };
+function fluidAt(x, y) {                                        // air speed at a stage pixel, in pixels per second (y down)
+  if (!vr.ok) { fv.x = fv.y = 0; return; }
+  const i = clamp((x / W * vr.w) | 0, 0, vr.w - 1), j = clamp(((1 - y / H) * vr.h) | 0, 0, vr.h - 1), k = (j * vr.w + i) * 4;
+  fv.x = vr.data[k]; fv.y = -vr.data[k + 1];
+}
+
+// ------------------------------ body outline and depth ------------------------------
+function blurTo(src, dst, step) {
+  const u = use(P.blur, { uSrc: src.tex }); gl.uniform2f(u.uDir, step / src.w, 0); draw(bTmp);
+  bindTex(0, bTmp.tex); gl.uniform2f(u.uDir, 0, step / src.h); draw(dst);
+}
+let maskU8 = null;
+function uploadMask(src, w, h) {                                // src: a canvas, or a Uint8Array of w*h
+  bindTex(15, texMask);
+  if (w) gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, w, h, 0, gl.RED, gl.UNSIGNED_BYTE, src);
+  else gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, gl.RED, gl.UNSIGNED_BYTE, src);
+  body.has = true;
+}
+function faceRelief(lms) {                                       // how far each face point stands out from the plane of the face outline
+  let sx = 0, sy = 0, sz = 0, sxx = 0, sxy = 0, syy = 0, sxz = 0, syz = 0; const n = FACE_OVAL.length;
+  for (const i of FACE_OVAL) { const x = lms[i].x, y = lms[i].y, z = lms[i].z || 0;
+    sx += x; sy += y; sz += z; sxx += x * x; sxy += x * y; syy += y * y; sxz += x * z; syz += y * z; }
+  const det = sxx * (syy * n - sy * sy) - sxy * (sxy * n - sy * sx) + sx * (sxy * sy - syy * sx);
+  let a = 0, b = 0, c = sz / n;
+  if (Math.abs(det) > 1e-12) {
+    a = (sxz * (syy * n - sy * sy) - sxy * (syz * n - sy * sz) + sx * (syz * sy - syy * sz)) / det;
+    b = (sxx * (syz * n - sz * sy) - sxz * (sxy * n - sy * sx) + sx * (sxy * sz - syz * sx)) / det;
+    c = (sxx * (syy * sz - sy * syz) - sxy * (sxy * sz - syz * sx) + sxz * (sxy * sy - syy * sx)) / det;
+  }
+  for (let i = 0; i < 468; i++) { const p = lms[i];
+    faceData[i * 3] = p.x; faceData[i * 3 + 1] = p.y; faceData[i * 3 + 2] = clamp(-((p.z || 0) - (a * p.x + b * p.y + c)), -0.02, 0.2) * 0.85; }
+  for (const i of FACE_OVAL) faceData[i * 3 + 2] = 0;
+}
+let faceMeshAt = 0;
+function bodyUpdate(now) {
+  if (!body.has) return;
+  buildBody();
+  gl.bindVertexArray(vaoQuad); gl.disable(gl.BLEND);
+  let u = use(P.ema, { uPrev: mS.read.tex, uNew: texMask }); gl.uniform1f(u.uK, 0.7); gl.uniform1f(u.uInv, body.inv); draw(mS.write); mS.swap();
+  blurTo(mS.read, b1, 1.0); blurTo(b1, b2, 2.5); blurTo(b2, b3, 6); blurTo(b3, b4, 14);
+  body.hasRelief = now - faceMeshAt < 200;
+  if (body.hasRelief) {
+    target(relief); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.useProgram(P.face.p); gl.bindVertexArray(vaoFace);
+    gl.bindBuffer(gl.ARRAY_BUFFER, faceBuf); gl.bufferSubData(gl.ARRAY_BUFFER, 0, faceData);
+    gl.drawElements(gl.TRIANGLES, FACE_TRIS.length, gl.UNSIGNED_SHORT, 0);
+    gl.bindVertexArray(vaoQuad);
+    blurTo(relief, reliefB, 1.3);
+  }
+  u = use(P.depth, { uB1: b1.tex, uB2: b2.tex, uB3: b3.tex, uB4: b4.tex, uRelief: reliefB.tex }); gl.uniform1f(u.uHasRelief, body.hasRelief ? 1 : 0); draw(depthT);
+}
+
+// ------------------------------ backgrounds ------------------------------
+let customBg = null, bgAspect = 16 / 9;
+function seeded(seed) { return () => { seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const SCENES = {
+  studio(g, w, h) {
+    let gr = g.createRadialGradient(w * 0.5, h * 0.38, 0, w * 0.5, h * 0.38, w * 0.62); gr.addColorStop(0, "#565d70"); gr.addColorStop(0.55, "#252a36"); gr.addColorStop(1, "#090a0f");
+    g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    gr = g.createLinearGradient(0, h * 0.72, 0, h); gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(0,0,0,.6)"); g.fillStyle = gr; g.fillRect(0, h * 0.72, w, h * 0.28);
+    g.fillStyle = "rgba(255,240,220,.1)"; g.beginPath(); g.moveTo(w * 0.18, 0); g.lineTo(w * 0.3, 0); g.lineTo(w * 0.62, h); g.lineTo(w * 0.2, h); g.fill();
+  },
+  city(g, w, h, r) {
+    let gr = g.createLinearGradient(0, 0, 0, h * 0.7); gr.addColorStop(0, "#070a22"); gr.addColorStop(0.6, "#2a1c52"); gr.addColorStop(1, "#7a3f66"); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 160; i++) { g.fillStyle = "rgba(255,255,255," + (0.2 + r() * 0.7) + ")"; g.fillRect(r() * w, r() * h * 0.45, 1.5, 1.5); }
+    const cols = ["#ffd58a", "#fff1c4", "#9fd0ff", "#ff9a6b", "#ffe9a8"];
+    for (let layer = 0; layer < 3; layer++) {
+      for (let x = -20; x < w;) { const bw = 40 + r() * 90, bh = h * (0.16 + r() * (0.2 + layer * 0.13)), top = h * (0.62 + layer * 0.07) - bh;
+        g.fillStyle = ["#1b1a3a", "#12122a", "#090a18"][layer]; g.fillRect(x, top, bw, h - top);
+        for (let wy = top + 8; wy < h - 20; wy += 13) for (let wx = x + 6; wx < x + bw - 8; wx += 11) if (r() < 0.34) {
+          g.globalAlpha = 0.45 + r() * 0.55; g.fillStyle = cols[(r() * cols.length) | 0]; g.fillRect(wx, wy, 6, 7); }
+        g.globalAlpha = 1; x += bw + r() * 12; }
+    }
+    for (let i = 0; i < 26; i++) { const x = r() * w, y = h * (0.7 + r() * 0.28), c = ["#ff4fa3", "#4fe3ff", "#ffd36b", "#ff7a3c", "#ffffff"][(r() * 5) | 0];
+      g.shadowColor = c; g.shadowBlur = 26; g.fillStyle = c; g.beginPath(); g.arc(x, y, 3 + r() * 5, 0, 6.3); g.fill(); }
+    g.shadowBlur = 0;
+  },
+  volcano(g, w, h, r) {
+    let gr = g.createLinearGradient(0, 0, 0, h * 0.75); gr.addColorStop(0, "#120505"); gr.addColorStop(0.55, "#4b1208"); gr.addColorStop(1, "#d6521c"); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    gr = g.createRadialGradient(w * 0.6, h * 0.3, 0, w * 0.6, h * 0.3, w * 0.4); gr.addColorStop(0, "rgba(255,170,70,.75)"); gr.addColorStop(1, "rgba(255,90,20,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    g.fillStyle = "#0e0605"; g.beginPath(); g.moveTo(0, h); g.lineTo(0, h * 0.74); g.lineTo(w * 0.32, h * 0.56); g.lineTo(w * 0.52, h * 0.32); g.lineTo(w * 0.68, h * 0.32); g.lineTo(w * 0.86, h * 0.6); g.lineTo(w, h * 0.7); g.lineTo(w, h); g.fill();
+    g.lineCap = "round"; g.shadowColor = "#ff5a1f"; g.shadowBlur = 24;
+    for (let i = 0; i < 9; i++) { let x = w * (0.53 + r() * 0.14), y = h * 0.33; g.strokeStyle = i % 2 ? "#ffb347" : "#ff7a2a"; g.lineWidth = 2 + r() * 5; g.beginPath(); g.moveTo(x, y);
+      while (y < h) { x += (r() - 0.5) * 60 + (i - 4) * 5; y += 16 + r() * 34; g.lineTo(x, y); } g.stroke(); }
+    g.shadowBlur = 12; for (let i = 0; i < 70; i++) { g.fillStyle = "rgba(255," + ((140 + r() * 100) | 0) + ",60," + (0.4 + r() * 0.6) + ")"; g.beginPath(); g.arc(r() * w, r() * h, 1 + r() * 2.5, 0, 6.3); g.fill(); }
+    g.shadowBlur = 0;
+  },
+  icecave(g, w, h, r) {
+    let gr = g.createRadialGradient(w * 0.52, h * 0.42, 0, w * 0.52, h * 0.42, w * 0.7); gr.addColorStop(0, "#e9fbff"); gr.addColorStop(0.25, "#7fd0ee"); gr.addColorStop(0.65, "#12506e"); gr.addColorStop(1, "#04141f"); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 46; i++) { const top = i % 2 === 0, x = r() * w, bw = 26 + r() * 90, len = h * (0.14 + r() * 0.42), y0 = top ? 0 : h, y1 = top ? len : h - len, lean = (r() - 0.5) * 80;
+      const sg = g.createLinearGradient(x - bw, 0, x + bw, 0); sg.addColorStop(0, "rgba(10,60,95,.92)"); sg.addColorStop(0.5, "rgba(170,230,255,.85)"); sg.addColorStop(1, "rgba(14,74,110,.92)");
+      g.fillStyle = sg; g.beginPath(); g.moveTo(x - bw, y0); g.lineTo(x + lean, y1); g.lineTo(x + bw, y0); g.fill();
+      g.strokeStyle = "rgba(255,255,255,.5)"; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x, y0); g.lineTo(x + lean, y1); g.stroke(); }
+    for (let i = 0; i < 50; i++) { g.fillStyle = "rgba(255,255,255," + (0.3 + r() * 0.7) + ")"; g.shadowColor = "#bff0ff"; g.shadowBlur = 14; g.beginPath(); g.arc(r() * w, r() * h, 1 + r() * 2.2, 0, 6.3); g.fill(); }
+    g.shadowBlur = 0;
+  },
+  forest(g, w, h, r) {
+    let gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, "#040912"); gr.addColorStop(0.5, "#0c2433"); gr.addColorStop(1, "#16383a"); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    gr = g.createRadialGradient(w * 0.72, h * 0.22, 0, w * 0.72, h * 0.22, w * 0.36); gr.addColorStop(0, "rgba(235,245,255,.95)"); gr.addColorStop(0.07, "rgba(210,230,255,.8)"); gr.addColorStop(0.09, "rgba(140,180,220,.3)"); gr.addColorStop(1, "rgba(120,170,220,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    for (let layer = 0; layer < 4; layer++) { g.fillStyle = ["#12303a", "#0c232c", "#07161d", "#030a0e"][layer];
+      for (let i = 0; i < 9 + layer * 2; i++) { const x = r() * w, tw = 8 + layer * 9 + r() * 12; g.beginPath(); g.moveTo(x - tw * 0.6, h); g.lineTo(x - tw * 0.35, 0); g.lineTo(x + tw * 0.35, 0); g.lineTo(x + tw * 0.6, h); g.fill(); }
+      gr = g.createLinearGradient(0, h * 0.55, 0, h); gr.addColorStop(0, "rgba(160,200,210,0)"); gr.addColorStop(1, "rgba(160,200,210,.09)"); g.fillStyle = gr; g.fillRect(0, h * 0.55, w, h * 0.45); }
+    g.shadowColor = "#d9ff7a"; g.shadowBlur = 16; for (let i = 0; i < 60; i++) { g.fillStyle = "rgba(225,255,140," + (0.4 + r() * 0.6) + ")"; g.beginPath(); g.arc(r() * w, h * (0.35 + r() * 0.6), 1.2 + r() * 2.2, 0, 6.3); g.fill(); }
+    g.shadowBlur = 0;
+  },
+  nebula(g, w, h, r) {
+    g.fillStyle = "#03040c"; g.fillRect(0, 0, w, h); g.globalCompositeOperation = "lighter";
+    for (const [c, n] of [["90,40,160", 5], ["200,50,120", 4], ["30,130,160", 4], ["240,150,70", 2]]) for (let i = 0; i < n; i++) {
+      const x = r() * w, y = r() * h, rad = w * (0.14 + r() * 0.26), gr = g.createRadialGradient(x, y, 0, x, y, rad);
+      gr.addColorStop(0, "rgba(" + c + ",.5)"); gr.addColorStop(1, "rgba(" + c + ",0)"); g.fillStyle = gr; g.fillRect(0, 0, w, h); }
+    for (let i = 0; i < 520; i++) { const big = r() < 0.05; g.fillStyle = "rgba(255,255,255," + (0.3 + r() * 0.7) + ")"; g.beginPath(); g.arc(r() * w, r() * h, big ? 1.8 + r() * 2 : 0.5 + r() * 0.9, 0, 6.3); g.fill(); }
+    g.globalCompositeOperation = "source-over";
+  }
+};
+function setBackground() {
+  if (!gl) return;
+  let src = null;
+  if (S.bg === "upload" && customBg) src = customBg;
+  else if (SCENES[S.bg]) { src = document.createElement("canvas"); src.width = 1600; src.height = 900; SCENES[S.bg](src.getContext("2d"), 1600, 900, seeded(7)); }
+  if (!src) return;
+  bgAspect = (src.naturalWidth || src.width) / (src.naturalHeight || src.height);
+  bindTex(15, texBg); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src);
+}
+
+// ------------------------------ drawing a frame ------------------------------
+function uploadVideo(src) { bindTex(15, texVideo); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src); }
+const lights = [], lightPos = new Float32Array(48), lightCol = new Float32Array(36);
+function light(x, y, r, c, k, z) { if (lights.length < 12 && k > 0.01) lights.push([x / W, 1 - y / H, Math.max(0.03, r / H), z === undefined ? 0.2 : z, c[0] * k, c[1] * k, c[2] * k]); }
+const VIEWS = { final: 0, depth: 1, normals: 2, mask: 3 };
+function render(now, nParts) {
+  gl.bindVertexArray(vaoQuad); gl.disable(gl.BLEND);
+  const ar = W / H, replace = S.bg !== "room" && body.has && (SCENES[S.bg] || customBg), dTexel = depthT ? [1 / depthT.w, 1 / depthT.h] : [1, 1];
+  const depthTex = depthT ? depthT.tex : texMask;
+  // background, blurred for depth of field
+  let u = use(P.bgblur, { uVideo: texVideo, uBg: texBg, uDepth: depthTex });
+  let fx = 0.94, fy = 0.94; if (bgAspect > ar) fx *= ar / bgAspect; else fy *= bgAspect / ar;
+  const par = face.found ? [(face.x / W - 0.5) * 0.03, (face.y / H - 0.5) * 0.02] : [0, 0];      // the far background drifts a little as your head moves
+  gl.uniform4f(u.uFit, fx, fy, par[0], par[1]); gl.uniform1f(u.uRoom, replace ? 0 : 1); gl.uniform1f(u.uAspect, ar);
+  gl.uniform1f(u.uHasBody, body.has ? 1 : 0); gl.uniform1f(u.uRadius, body.has || replace ? S.dof * S.dof * 0.045 : 0); draw(bgBlurT);
+  // scene
+  lightPos.fill(0); lightCol.fill(0);
+  lights.forEach((l, i) => { lightPos.set([l[0], l[1], l[2], l[3]], i * 4); lightCol.set([l[4], l[5], l[6]], i * 3); });
+  u = use(P.scene, { uA: fA.read.tex, uB: fB.read.tex, uC: fC.read.tex, uVideo: texVideo, uDepth: depthTex, uBgB: bgBlurT.tex, uOver: texOver, uFx: texFx });
+  gl.uniform4fv(u.uLP, lightPos); gl.uniform3fv(u.uLC, lightCol); gl.uniform1i(u.uNL, lights.length);
+  gl.uniform2f(u.uTexel, 1 / fA.w, 1 / fA.h); gl.uniform2f(u.uDTexel, dTexel[0], dTexel[1]); gl.uniform2f(u.uOTexel, 1 / W, 1 / H);
+  gl.uniform1f(u.uAmb, S.amb); gl.uniform1f(u.uBgBright, S.bgbright); gl.uniform1f(u.uHaze, 0.0035); gl.uniform1f(u.uTime, now / 1000 % 1000);
+  gl.uniform1f(u.uAspect, ar); gl.uniform1f(u.uHasOver, overOn ? 1 : 0); gl.uniform1f(u.uHasFx, fxOn ? 1 : 0); gl.uniform1f(u.uHasBody, body.has ? 1 : 0);
+  gl.uniform1f(u.uRelight, S.relight); gl.uniform1f(u.uSmoke, S.smoke); gl.uniform1f(u.uShape, S.shape);
+  const bR = ball.state === "none" ? 0 : ball.r * ball.on, bc = bR > 0.5 ? ballCol(ball.el) : [0, 0, 0];
+  gl.uniform4f(u.uBall, ball.x / W, 1 - ball.y / H, bR / H, bR > 0.5 ? BALLK[ball.el] : 0); gl.uniform3f(u.uBallCol, bc[0], bc[1], bc[2]);
+  gl.uniform1f(u.uBallWob, ball.wob); gl.uniform1f(u.uBallGain, ball.state === "push" ? Math.pow(ball.r0 / ball.r, 1.8) : 1);   // as it swells toward the camera its light spreads thinner
+  gl.uniform4f(u.uShock, shock.x / W, 1 - shock.y / H, shock.t * 1.5, shock.t < 1.6 ? shock.s * Math.exp(-shock.t * 3) : 0);
+  draw(sceneT);
+  // sparks, crystals and drops, added as light
+  if (nParts) {
+    gl.useProgram(P.part.p); gl.uniform2f(P.part.u.uRes, W, H);
+    gl.bindVertexArray(vaoPart); gl.bindBuffer(gl.ARRAY_BUFFER, partBuf); gl.bufferSubData(gl.ARRAY_BUFFER, 0, partData, 0, nParts * 10);
+    gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); target(sceneT);
+    gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, nParts);
+    gl.disable(gl.BLEND); gl.bindVertexArray(vaoQuad);
+  }
+  // glow: bright parts are shrunk through five sizes and added back, so hot things bleed light
+  let src = sceneT;
+  bloomD.forEach((t, i) => { u = use(P.bdown, { uSrc: src.tex }); gl.uniform2f(u.uT, 1 / src.w, 1 / src.h); gl.uniform1f(u.uThr, i ? 0 : 0.8); draw(t); src = t; });
+  for (let i = bloomU.length - 1; i >= 0; i--) { u = use(P.bup, { uSrc: src.tex, uAdd: bloomD[i].tex }); gl.uniform2f(u.uT, 0.5 / src.w, 0.5 / src.h); draw(bloomU[i]); src = bloomU[i]; }
+  u = use(P.final, { uScene: sceneT.tex, uBloom: src.tex, uDepth: depthTex });
+  gl.uniform2f(u.uDTexel, dTexel[0], dTexel[1]); gl.uniform1f(u.uGlow, S.glow); gl.uniform1f(u.uAspect, ar); gl.uniform1f(u.uShape, S.shape);
+  gl.uniform2f(u.uShake, rnd(-1, 1) * shake.k * 0.012, rnd(-1, 1) * shake.k * 0.012);
+  gl.uniform1i(u.uView, body.has ? VIEWS[S.view] || 0 : 0); draw(null);
+}
+function resize(force) {
+  const r = stage.getBoundingClientRect();
+  const w = Math.max(2, Math.round(r.width)), h = Math.max(2, Math.round(r.height));
+  if (w === W && h === H && !force) return;
+  W = w; H = h;
+  const pr = Math.min(window.devicePixelRatio || 1, (QUAL[S.quality] || QUAL.med)[2]);
+  CW = Math.round(W * pr); CH = Math.round(H * pr);
+  $("hud").width = W; $("hud").height = H;
+  for (const c of [iceC, scratch, fxC]) { c.width = W; c.height = H; }
+  if (gl) { $("gl").width = CW; $("gl").height = CH; buildGrids(); }
+}
+
+// ------------------------------ sparks, crystals and drops ------------------------------
+const parts = [], bolts = [], shots = [], emitters = [];
+function spawn(type, x, y, vx, vy, life, size, col) {
+  if (parts.length < MAXP) parts.push({ type, x, y, vx, vy, life, age: 0, size, col, rot: Math.random() * 6.28, spin: rnd(-3, 3), seed: Math.random() });
+}
+// gravity, drag, jitter, and how strongly each kind is carried by the air
+const PHYS = { ember: [-0.16, 0.5, 0.55, 5], fleck: [0.9, 0.6, 0, 0.6], crystal: [0.13, 1.3, 0.14, 3], glint: [0, 3, 0, 0], drop: [1.7, 0.2, 0, 0.6],
+               spark: [-0.07, 1.3, 0.35, 2.5], bit: [1.2, 0.6, 0, 0], air: [0, 0.8, 0, 4], run: [0.2, 2.4, 0, 0] };
+function updateParts(dt) {
+  let n = 0; const d = partData;
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i], f = PHYS[p.type];
+    p.age += dt;
+    if (p.age > p.life || p.x < -40 || p.x > W + 40 || p.y < -40 || p.y > H + 40) { parts[i] = parts[parts.length - 1]; parts.pop(); continue; }
+    p.vy += f[0] * H * dt; p.vx += rnd(-1, 1) * f[2] * H * dt; p.vy += rnd(-1, 1) * f[2] * H * dt * 0.6;
+    const dr = Math.exp(-f[1] * dt); p.vx *= dr; p.vy *= dr;
+    if (f[3]) { fluidAt(p.x, p.y); const k = Math.min(1, f[3] * dt); p.vx += (fv.x - p.vx) * k; p.vy += (fv.y - p.vy) * k; }
+    p.x += p.vx * dt; p.y += p.vy * dt;
+  }
+  for (const p of parts) {
+    const k = 1 - p.age / p.life, o = n * 10; let ax = 0, ay = 0, w = p.size, r = 1, g = 1, b = 1, al = 1, kind = 0;
+    switch (p.type) {
+      case "ember": { const fl = 0.65 + 0.35 * Math.sin(p.age * 31 + p.seed * 40);
+        ax = p.vx * 0.013; ay = p.vy * 0.013; w = p.size * (1.3 + 1.2 * k); r = 0.4 + 3.6 * Math.pow(k, 0.6); g = 1.9 * Math.pow(k, 1.7); b = 0.5 * k * k * k; al = fl * Math.min(1, k * 4); break; }
+      case "fleck": ax = p.vx * 0.02; ay = p.vy * 0.02; w = p.size; r = 5 * k; g = 3.4 * k; b = 1.4 * k; break;
+      case "crystal": { const a = p.rot + p.age * p.spin, tw = 0.55 + 0.45 * Math.sin(p.age * 17 + p.seed * 30);
+        kind = 2; ax = Math.cos(a) * p.size; ay = Math.sin(a) * p.size; r = 0.75; g = 0.92; b = 1.15; al = tw * Math.min(1, k * 3) * 0.55; break; }
+      case "glint": kind = 1; ax = p.size; r = 1.3; g = 1.6; b = 2.0; al = Math.sin(Math.PI * (1 - k)) * 0.8; break;
+      case "drop": ax = p.vx * 0.02; ay = p.vy * 0.02; w = p.size * 1.4; r = 0.45; g = 0.72; b = 1.15; al = k * 0.85; break;
+      case "spark": { const tw = 0.4 + 0.6 * Math.abs(Math.sin(p.age * 14 + p.rot));
+        kind = 1; ax = p.size * 0.7; ay = p.size * 0.7; r = p.col[0] * 2.2; g = p.col[1] * 2.2; b = p.col[2] * 2.2; al = k * tw; break; }
+      case "run": ay = p.size * 2.4; w = p.size; r = 0.5; g = 0.76; b = 1.15; al = Math.min(1, k * 3) * 0.7; break;   // a drop running down the screen
+      case "bit": ax = p.vx * 0.015; ay = p.vy * 0.015; w = 2; r = 1.6; g = 1.8; b = 2.8; al = k; break;
+      default: ax = p.vx * 0.03; ay = p.vy * 0.03; w = 1.6; r = 0.5; g = 0.55; b = 0.6; al = k * 0.3;
+    }
+    d[o] = p.x; d[o + 1] = p.y; d[o + 2] = ax; d[o + 3] = ay; d[o + 4] = w; d[o + 5] = r; d[o + 6] = g; d[o + 7] = b; d[o + 8] = al; d[o + 9] = kind; n++;
+  }
+  return n;
+}
+// lightning is drawn as lines on its own layer, which the scene adds as light
+const fxC = document.createElement("canvas"); let fxOn = false;
+function addBolt(x0, y0, x1, y1, width, fork, now) {
+  let pts = [[x0, y0], [x1, y1]], disp = Math.hypot(x1 - x0, y1 - y0) * 0.22;
+  for (let it = 0; it < 6; it++) {
+    const n = [pts[0]];
+    for (let i = 1; i < pts.length; i++) { const a = pts[i - 1], b = pts[i];
+      n.push([(a[0] + b[0]) / 2 + rnd(-0.5, 0.5) * disp, (a[1] + b[1]) / 2 + rnd(-0.5, 0.5) * disp], b); }
+    pts = n; disp *= 0.55;
+  }
+  bolts.push({ pts, t0: now, life: rnd(70, 140), w: width });
+  if (fork && Math.random() < 0.75) {
+    const m = pts[(pts.length * rnd(0.3, 0.7)) | 0], L = Math.hypot(x1 - x0, y1 - y0) * rnd(0.25, 0.5), a = Math.atan2(y1 - y0, x1 - x0) + rnd(-0.9, 0.9);
+    addBolt(m[0], m[1], m[0] + Math.cos(a) * L, m[1] + Math.sin(a) * L, width * 0.55, width > 2, now);
+  }
+  if (width > 1.2) {
+    light(x1, y1, H * 0.24, [0.5, 0.6, 1], 0.8, 0.14); light(x0, y0, H * 0.18, [0.5, 0.6, 1], 0.55, 0.14);
+    splatB(x1, y1, H * 0.012, 0.12, 0.16, 0.4, 0);
+    for (let i = 0; i < 3; i++) spawn("bit", x1, y1, rnd(-0.4, 0.4) * H, rnd(-0.5, 0.1) * H, rnd(0.2, 0.5), 2);
+  }
+}
+function drawBolts(now) {
+  const had = fxOn; fxOn = bolts.length > 0;
+  if (!fxOn && !had) return;
+  const g = fxC.getContext("2d"); g.clearRect(0, 0, W, H);
+  g.globalCompositeOperation = "lighter"; g.lineJoin = g.lineCap = "round";
+  for (let i = bolts.length - 1; i >= 0; i--) {
+    const b = bolts[i], k = 1 - (now - b.t0) / b.life;
+    if (k <= 0) { bolts.splice(i, 1); continue; }
+    g.beginPath(); b.pts.forEach((p, j) => j ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]));
+    g.strokeStyle = "rgba(80,110,255," + (0.14 * k).toFixed(3) + ")"; g.lineWidth = b.w * 8; g.stroke();
+    g.strokeStyle = "rgba(140,170,255," + (0.5 * k).toFixed(3) + ")"; g.lineWidth = b.w * 2.8; g.stroke();
+    g.strokeStyle = "rgba(255,255,255," + k.toFixed(3) + ")"; g.lineWidth = b.w * 0.9; g.stroke();
+  }
+  bindTex(15, texFx); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, fxC);
+  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+}
+
+// ------------------------------ one element coming out of one point ------------------------------
+const LIGHT = { fire: [1.0, 0.5, 0.15], ice: [0.35, 0.6, 0.95], water: [0.2, 0.4, 0.7], bolt: [0.45, 0.55, 1.0] };
+function emit(el, x, y, dx, dy, rad, w, speed, owner, dt, now, power, few) {
+  const pr = few ? 0.3 : 1;                                     // fewer sparks per source when a whole hand has many sources
+  const a = rnd(-0.28, 0.28), ca = Math.cos(a), sa = Math.sin(a), jx = dx * ca - dy * sa, jy = dx * sa + dy * ca;
+  const ox = x + rnd(-0.3, 0.3) * rad, oy = y + rnd(-0.3, 0.3) * rad, kv = dt * 9 * w, pv = speed * 0.6;
+  if (speed > 1) { const m = el === "water" ? 1.5 : 1; splatVel(ox, oy, rad * 1.3, jx * speed * kv * m, jy * speed * kv * m); }
+  if (el === "fire") {
+    splatA(ox, oy, rad * rnd(0.8, 1.15), 14 * w * dt, 0, 0, 0);
+    splatVel(ox, oy, rad * 1.2, 0, -0.3 * H * kv);
+    if (Math.random() < dt * 70 * w * pr) spawn("ember", ox + rnd(-0.6, 0.6) * rad, oy + rnd(-0.6, 0.6) * rad, jx * pv + rnd(-0.08, 0.08) * H, jy * pv - rnd(0.05, 0.28) * H, rnd(0.6, 2.6), rnd(0.9, 2.2));
+    if (Math.random() < dt * 7 * w * pr) spawn("fleck", ox, oy, rnd(-0.35, 0.35) * H, -rnd(0.2, 0.75) * H, rnd(0.3, 0.8), rnd(1.2, 2));
+    light(x, y - rad * 1.6, rad * 7 + H * 0.06, LIGHT.fire, 1.2 * w * rnd(0.8, 1.12), 0.2);
+  } else if (el === "ice") {
+    splatA(ox, oy, rad * 1.1, 0, 9.5 * w * dt, 0, 0);
+    if (Math.random() < dt * 22 * w * pr) spawn("crystal", ox + rnd(-1, 1) * rad, oy + rnd(-1, 1) * rad, jx * pv + rnd(-0.07, 0.07) * H, jy * pv + rnd(-0.07, 0.07) * H, rnd(0.9, 2.4), rnd(2, 5));
+    if (Math.random() < dt * 6 * w * pr) spawn("glint", ox + rnd(-1.6, 1.6) * rad, oy + rnd(-1.6, 1.6) * rad, 0, 0, rnd(0.15, 0.4), rnd(3, 7));
+    light(x, y, rad * 6 + H * 0.05, LIGHT.ice, 0.75 * w, 0.2);
+  } else if (el === "water") {
+    splatA(ox, oy, rad * 0.95, 0, 0, 0, 13 * w * dt);
+    if (Math.random() < dt * 40 * w) spawn("drop", ox, oy, jx * speed * 0.9 + rnd(-0.12, 0.12) * H, jy * speed * 0.9 + rnd(-0.15, 0.1) * H, rnd(0.5, 1.1), rnd(1.5, 3));
+    light(x, y, rad * 5, LIGHT.water, 0.3 * w, 0.2);
+  } else if (el === "magic") {
+    const c = magicRGB(), k = 7 * w * dt;
+    splatB(ox, oy, rad, c[0] * k, c[1] * k, c[2] * k, 0.55 * k);
+    if (Math.random() < dt * 34 * w * pr) spawn("spark", ox + rnd(-1.2, 1.2) * rad, oy + rnd(-1.2, 1.2) * rad, jx * pv + rnd(-0.1, 0.1) * H, jy * pv + rnd(-0.18, 0.05) * H, rnd(0.6, 1.7), rnd(4, 10), c);
+    light(x, y, rad * 7 + H * 0.05, c, 1.1 * w, 0.2);
+  } else if (el === "bolt") {
+    const k = 1.3 * w * dt;
+    splatB(ox, oy, rad * 0.9, 0.3 * k, 0.4 * k, 1.0 * k, 0);
+    light(x, y, rad * 5, LIGHT.bolt, 0.5 * w * rnd(0.3, 1.3), 0.15);
+    if ((owner === "M" || owner === "shot") && Math.random() < dt * 16 * w) {
+      const L = speed > 1 ? speed * 0.5 + rad * 3 : rad * rnd(3, 7), b = Math.atan2(dy, dx) + (speed > 1 ? rnd(-0.35, 0.35) : rnd(0, 6.28));
+      addBolt(x, y, x + Math.cos(b) * L, y + Math.sin(b) * L, speed > 1 ? 2 : 1.3, true, now);
+    }
+  }
+  emitters.push({ x, y, dx, dy, speed, r: rad, el, owner, pw: (power || 1) * w });
+}
+
+// ------------------------------ hands ------------------------------
+const TIPS = [4, 8, 12, 16, 20], FINGERS = [[1,2,3,4],[5,6,7,8],[9,10,11,12],[13,14,15,16],[17,18,19,20]];
+const PALM = [0, 1, 2, 5, 9, 13, 17], SEGS = [[0,5],[0,17],[5,9],[9,13],[13,17],[1,2],[2,3],[3,4],[5,6],[6,7],[7,8],[9,10],[10,11],[11,12],[13,14],[14,15],[15,16],[17,18],[18,19],[19,20]];
+function mkHand(id) { return { id, P: null, vis: false, seen: 0, c: { x: 0, y: 0 }, v: { x: 0, y: 0 }, axis: { x: 0, y: -1 },
+                               size: 60, span: 40, ext: [0, 0, 0, 0, 0], open: 0, frost: 0, lastThrow: 0, boltAt: 0, fast: 0, on: 0, grow: 0, surge: 0, cx: 0.5, cy: 0.5 }; }
+const hands = { L: mkHand("L"), R: mkHand("R") };
+function updateHand(h, lms, now) {
+  const fresh = !h.vis || now - h.seen > 300, P = h.P || (h.P = lms.map(() => ({ x: 0, y: 0 })));
+  lms.forEach((p, i) => { const x = (1 - p.x) * W, y = p.y * H;
+    if (fresh) { P[i].x = x; P[i].y = y; } else { P[i].x += (x - P[i].x) * 0.65; P[i].y += (y - P[i].y) * 0.65; } });
+  let cx = 0, cy = 0; for (const i of [0, 5, 9, 13, 17]) { cx += P[i].x / 5; cy += P[i].y / 5; }
+  const el = Math.max(0.008, (now - h.seen) / 1000);
+  if (fresh) { h.v.x = h.v.y = 0; h.fast = 0; }
+  else { h.v.x += ((cx - h.c.x) / el - h.v.x) * 0.5; h.v.y += ((cy - h.c.y) / el - h.v.y) * 0.5; }
+  h.c.x = cx; h.c.y = cy;
+  const ax = P[9].x - P[0].x, ay = P[9].y - P[0].y, al = Math.hypot(ax, ay) || 1;
+  h.axis.x = ax / al; h.axis.y = ay / al;
+  h.span = Math.hypot(P[5].x - P[17].x, P[5].y - P[17].y) || 1;
+  const was = h.size; h.size = Math.max(al, h.span * 1.25);
+  // a hand that grows quickly in the picture is being pushed toward the camera
+  if (fresh) h.grow = h.surge = 0;
+  else { h.grow += (Math.log(h.size / was) / el - h.grow) * 0.4; h.surge = h.grow > 0.9 ? h.surge + h.grow * el : 0; }
+  h.cx = (lms[0].x + lms[9].x) / 2; h.cy = (lms[0].y + lms[9].y) / 2;
+  // which fingers are raised (uses depth too, so it still works when a finger points at the camera)
+  const d3 = (a, b) => Math.hypot((lms[a].x - lms[b].x) * W, (lms[a].y - lms[b].y) * H, ((lms[a].z || 0) - (lms[b].z || 0)) * W);
+  const e = [d3(4, 17) > d3(2, 17) * 1.2 ? 1 : 0];
+  for (let f = 1; f < 5; f++) e.push(d3(TIPS[f], 0) > d3(TIPS[f] - 2, 0) * 1.1 ? 1 : 0);
+  for (let f = 0; f < 5; f++) h.ext[f] = fresh ? e[f] : h.ext[f] + (e[f] - h.ext[f]) * 0.45;
+  h.open = (h.ext[1] + h.ext[2] + h.ext[3] + h.ext[4]) / 4;
+  h.vis = true; h.seen = now;
+}
+function tipSource(h, f, rad, jet) {
+  const P = h.P, t = TIPS[f], dx = P[t].x - P[t - 1].x, dy = P[t].y - P[t - 1].y, l = Math.hypot(dx, dy) || 1;
+  return { x: P[t].x + dx / l * h.size * 0.05, y: P[t].y + dy / l * h.size * 0.05, dx: dx / l, dy: dy / l, rad: h.size * rad, w: h.ext[f], jet };
+}
+function sources(h, src) {
+  const s = h.size, out = [];
+  if (src === "index") out.push(tipSource(h, 1, 0.14, 1));
+  else if (src === "tips") for (let f = 0; f < 5; f++) out.push(tipSource(h, f, 0.095, 1));
+  else if (src === "whole") {
+    for (let k = 0; k < 5; k++) {
+      const sg = SEGS[(Math.random() * SEGS.length) | 0], t = Math.random(), a = h.P[sg[0]], b = h.P[sg[1]];
+      const x = a.x + (b.x - a.x) * t, y = a.y + (b.y - a.y) * t, dx = x - h.c.x, dy = y - h.c.y, l = Math.hypot(dx, dy) || 1;
+      out.push({ x, y, dx: dx / l, dy: dy / l, rad: s * 0.16, w: 0.5, jet: 0.12, whole: true });
+    }
+    out.push({ x: h.c.x, y: h.c.y, dx: h.axis.x, dy: h.axis.y, rad: s * 0.26, w: 0.5, jet: 0.12, whole: true });
+  } else out.push({ x: h.c.x + h.axis.x * s * 0.08, y: h.c.y + h.axis.y * s * 0.08, dx: h.axis.x, dy: h.axis.y, rad: s * 0.3, w: smooth(0.3, 0.7, h.open), jet: 0.3 });
+  return out;
+}
+function handBolts(h, pts, now) {
+  if (now < h.boltAt) return;
+  h.boltAt = now + rnd(35, 85);
+  const src = S["src" + h.id], act = pts.filter(p => p.w > 0.5), o = h.id === "L" ? hands.R : hands.L;
+  const both = o.vis && S[o.id] === "bolt";
+  if (src === "tips") { for (let i = 1; i < act.length; i++) if (Math.random() < 0.7) addBolt(act[i - 1].x, act[i - 1].y, act[i].x, act[i].y, 1.3, false, now); }
+  else if (src === "palm") { if (act.length) for (let f = 0; f < 5; f++) if (h.ext[f] > 0.5 && Math.random() < 0.55) addBolt(h.c.x, h.c.y, h.P[TIPS[f]].x, h.P[TIPS[f]].y, 1.2, false, now); }
+  else if (src === "index") { if (act.length && !both) { const p = act[0], L = (0.25 + S.force * 0.8) * H, a = Math.atan2(p.dy, p.dx) + rnd(-0.16, 0.16);
+    addBolt(p.x, p.y, p.x + Math.cos(a) * L, p.y + Math.sin(a) * L, 2.2, true, now); } }
+  else for (let k = 0; k < 3; k++) { const a = h.P[(Math.random() * 21) | 0], b = h.P[(Math.random() * 21) | 0]; addBolt(a.x, a.y, b.x, b.y, 1.1, false, now); }
+  if (both && h.id === "L") {                                    // both hands charged: arcs jump from one to the other
+    const A = act.length ? act : [{ x: h.c.x, y: h.c.y }], oa = sources(o, S["src" + o.id]).filter(p => p.w > 0.45), B = oa.length ? oa : [{ x: o.c.x, y: o.c.y }];
+    for (let k = 0; k < 2; k++) { const a = A[(Math.random() * A.length) | 0], b = B[(Math.random() * B.length) | 0]; addBolt(a.x, a.y, b.x, b.y, k ? 1.4 : 2.4, k === 0, now); }
+  }
+}
+function handEmit(h, dt, now) {
+  const el = S[h.id], src = S["src" + h.id], spd = Math.hypot(h.v.x, h.v.y);
+  splatVel(h.c.x, h.c.y, h.size * 0.7, h.v.x * dt * 2.5, h.v.y * dt * 2.5);  // a moving hand stirs the air a little
+  h.on = 0;
+  h.fast = spd > 1.5 * H ? h.fast + dt : 0;
+  if (el === "off" || (S.ball !== "off" && h.id === S.ballHand)) return;      // the hand that holds the ball casts nothing else
+  const thaw = el === "ice" ? 1 : 1 - smooth(0.3, 0.9, h.frost);            // a frozen hand cannot cast until it thaws
+  const pts = sources(h, src), jet = S.force * S.force * 2.4 * H, n0 = lights.length;
+  for (const p of pts) {
+    const w = (S.fist || p.whole ? p.w : 1) * thaw;
+    if (w < 0.05) continue;
+    h.on = Math.max(h.on, w);
+    const n = lights.length;
+    emit(el, p.x, p.y, p.dx, p.dy, p.rad * S.size, w, jet * p.jet, h.id, dt, now, 1, p.whole);
+    if (p.whole && n > n0) lights.length = n;                  // a whole hand counts as one light
+  }
+  const made = lights.length - n0;                              // several sources on one hand share the light between them
+  if (made > 1) for (let i = n0; i < lights.length; i++) { const k = 1.25 / Math.sqrt(made); lights[i][4] *= k; lights[i][5] *= k; lights[i][6] *= k; }
+  if (el === "bolt" && thaw > 0.5) handBolts(h, pts, now);
+  if (S.flick && h.fast > 0.03 && h.on > 0.3 && now - h.lastThrow > 650) {
+    h.lastThrow = now;
+    const k = Math.min(1.15, 3.2 * H / spd);
+    shots.push({ x: h.c.x, y: h.c.y, vx: h.v.x * k, vy: h.v.y * k, el, r: h.size * 0.3 * S.size, age: 0 });
+  }
+}
+function updateShots(dt, now) {
+  for (let i = shots.length - 1; i >= 0; i--) {
+    const s = shots[i]; s.age += dt;
+    if (s.el === "water") s.vy += 1.1 * H * dt;
+    s.x += s.vx * dt; s.y += s.vy * dt;
+    if (s.age > (s.life || 3) || s.x < -60 || s.x > W + 60 || s.y < -60 || s.y > H + 60) { shots.splice(i, 1); continue; }
+    const sp = Math.hypot(s.vx, s.vy) || 1;
+    if (s.frag) emit(s.el, s.x, s.y, s.vx / sp, s.vy / sp, s.r, (s.el === "magic" ? 0.3 : 1.3) * (1 - s.age / s.life), 0, "shot", dt, now, 1, true);
+    else for (let k = 0; k < 2; k++) emit(s.el, s.x, s.y, s.vx / sp, s.vy / sp, s.r, 1.5, 0, "shot", dt, now, 1.5);
+    splatVel(s.x, s.y, s.r * 1.4, s.vx * dt * 4, s.vy * dt * 4);
+  }
+}
+// ------------------------------ the ball on the palm ------------------------------
+const ball = { state: "none", el: "off", x: 0, y: 0, vx: 0, vy: 0, r: 30, r0: 30, on: 0, charge: 0, wob: 0, t: 0, cool: 0, shut: 0, loose: false };
+const shock = { x: 0, y: 0, t: 9, s: 0 }, flash = { x: 0, y: 0, c: [1, 1, 1], k: 0 }, shake = { k: 0 };
+const BALLK = { fire: 1, water: 2, magic: 3 }, BALLC = { fire: [1.0, 0.5, 0.15], water: [0.3, 0.6, 1.0] };
+const ballCol = el => el === "magic" ? magicRGB() : BALLC[el] || BALLC.fire;
+function burst(x, y, el, big, vx, vy) {                         // the ball breaks apart
+  const c = ballCol(el), R = ball.r0 * (big ? 1.7 : 1), n = big ? 16 : 11;
+  shock.x = x; shock.y = y; shock.t = 0; shock.s = big ? 1 : 0.6;
+  flash.x = x; flash.y = y; flash.c = el === "water" ? [0.5, 0.7, 1] : c; flash.k = (big ? 1.8 : 1.3) * (el === "magic" ? 0.6 : 1);
+  shake.k = big ? 1 : 0.4;
+  splatVel(x, y, R * 2.2, (big ? 1.5 : 1.0) * H, 0, true);
+  if (el === "fire") splatA(x, y, R * 1.2, 2.8, 0, 0, 0); else if (el === "water") splatA(x, y, R * 1.1, 0, 0, 0.35, 2.4);
+  else splatB(x, y, R * 1.1, c[0] * 0.8, c[1] * 0.8, c[2] * 0.8, 0.2);
+  for (let i = 0; i < n; i++) {                                 // pieces fly apart, each trailing the element until it burns out
+    const a = i / n * 6.283 + rnd(-0.25, 0.25), sp = rnd(0.5, 1.5) * H * (big ? 1.25 : 1);
+    shots.push({ x, y, vx: Math.cos(a) * sp + vx * 0.25, vy: Math.sin(a) * sp + vy * 0.25, el, r: ball.r0 * rnd(0.16, 0.34), age: 0, life: rnd(0.25, 0.7), frag: true });
+  }
+  for (let i = 0, m = big ? 260 : 150; i < m; i++) {
+    const a = rnd(0, 6.283), sp = rnd(0.15, 2.2) * H, px = x + Math.cos(a) * R * 0.5, py = y + Math.sin(a) * R * 0.5, ux = Math.cos(a) * sp + vx * 0.2, uy = Math.sin(a) * sp + vy * 0.2;
+    if (el === "fire") spawn(i % 4 ? "ember" : "fleck", px, py, ux, uy, rnd(0.5, 2.4), rnd(1, 2.6));
+    else if (el === "water") { spawn("drop", px, py, ux, uy, rnd(0.5, 1.4), rnd(1.5, 3.5));
+      if (big && i % 3 === 0) spawn("run", x + rnd(-1, 1) * R * 2.6, y + rnd(-1, 1) * R * 2, rnd(-0.01, 0.01) * H, rnd(0, 0.04) * H, rnd(1.5, 3.8), rnd(2, 4.5)); }
+    else spawn("spark", px, py, ux, uy, rnd(0.5, 1.9), rnd(4, 11), c);
+  }
+}
+function updateBall(dt, now) {
+  shock.t += dt; flash.k *= Math.exp(-dt * 9); shake.k *= Math.exp(-dt * 8);
+  if (flash.k > 0.03) light(flash.x, flash.y, H * 0.5, flash.c, flash.k, 0.3);
+  const el = S.ball, hd = hands[S.ballHand] || hands.R, ot = hd === hands.L ? hands.R : hands.L, b = ball;
+  if (el === "off") { b.state = "none"; b.on = 0; return; }
+  if (b.state === "none") {                                     // a new ball forms on an open palm
+    if (!(hd.vis && (!S.fist || hd.open > 0.4) && now > b.cool)) return;
+    Object.assign(b, { state: "held", el, on: 0, charge: 0, wob: 0, x: hd.c.x, y: hd.c.y, vx: 0, vy: 0, r: hd.size * 0.5 * S.size, shut: 0, loose: false });
+  }
+  if (b.state === "held") {
+    b.el = el;
+    if (!hd.vis) {                                              // the hand is out of sight: wait a moment in case it is only a tracking blink, then let the ball drop
+      b.lost = (b.lost || 0) + dt; b.vx *= Math.exp(-dt * 6); b.vy *= Math.exp(-dt * 6);
+      if (b.lost > 0.7) { b.state = "fly"; b.t = 0; b.loose = true; b.r0 = b.r; b.lost = 0; }
+    } else {
+      b.lost = 0;
+      b.shut = S.fist && hd.open < 0.15 ? b.shut + dt : 0;       // a closed fist smothers it
+      b.on = clamp(b.on + dt * (b.shut > 0.25 ? -3.5 : 2.2), 0, 1);
+      if (b.shut > 0.25 && b.on <= 0) { b.state = "none"; return; }
+      const rT = hd.size * 0.5 * S.size * (1 + 0.6 * b.charge); b.r += (rT - b.r) * Math.min(1, dt * 8); b.r0 = b.r;
+      const tx = hd.c.x + hd.axis.x * hd.size * 0.05, ty = hd.c.y - b.r * 0.55;      // it rests just above the middle of the palm, on a spring
+      b.vx += ((tx - b.x) * 140 - b.vx * 16) * dt; b.vy += ((ty - b.y) * 140 - b.vy * 16) * dt;
+      if (ot.vis) {                                             // the other hand: feed it from close by, poke it, or slap it away
+        const osp = Math.hypot(ot.v.x, ot.v.y), rr = b.r * b.on * 1.05, c = ballCol(b.el);
+        for (const p of [ot.c, ot.P[4], ot.P[8], ot.P[12], ot.P[16], ot.P[20]]) {
+          const dx = b.x - p.x, dy = b.y - p.y, d = Math.hypot(dx, dy) || 1;
+          if (d >= rr) continue;
+          b.vx += dx / d * (rr - d) * 320 * dt; b.vy += dy / d * (rr - d) * 320 * dt; b.wob = Math.min(1, b.wob + dt * 7);
+          if (Math.random() < dt * 40) { const a = Math.atan2(-dy, -dx) + rnd(-1, 1), sp = rnd(0.2, 0.7) * H;
+            if (b.el === "fire") spawn("ember", p.x, p.y, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.4, 1.2), rnd(1, 2.2));
+            else if (b.el === "water") spawn("drop", p.x, p.y, Math.cos(a) * sp, Math.sin(a) * sp - 0.2 * H, rnd(0.4, 0.9), rnd(1.5, 3));
+            else spawn("spark", p.x, p.y, Math.cos(a) * sp, Math.sin(a) * sp, rnd(0.4, 1.1), rnd(4, 9), c); }
+          if (osp > 1.0 * H && b.on > 0.7) { const k = Math.min(1.25, 3.2 * H / osp); b.state = "fly"; b.t = 0; b.vx = ot.v.x * k; b.vy = ot.v.y * k; break; }
+        }
+        const dn = Math.hypot(b.x - ot.c.x, b.y - ot.c.y) || 1, feed = smooth(b.r * 5, b.r * 1.8, dn);
+        b.charge = clamp(b.charge + dt * (feed > 0.3 ? 0.45 * feed : -0.5), 0, 1);
+        if (feed > 0.15 && b.state === "held") {                // streamers drift from the ball toward the other hand
+          const ux = (ot.c.x - b.x) / dn, uy = (ot.c.y - b.y) / dn, a = rnd(0, 6.283), sx = b.x + Math.cos(a) * b.r * 0.9, sy = b.y + Math.sin(a) * b.r * 0.9;
+          splatVel(b.x + ux * b.r, b.y + uy * b.r, b.r * 0.8, ux * 0.5 * H * feed * dt * 6, uy * 0.5 * H * feed * dt * 6);
+          if (Math.random() < dt * 45 * feed) { const sp = dn / rnd(0.45, 0.8);
+            if (b.el === "fire") spawn("ember", sx, sy, ux * sp, uy * sp, rnd(0.4, 0.8), rnd(1, 2));
+            else spawn("spark", sx, sy, ux * sp, uy * sp, rnd(0.4, 0.8), rnd(3, 7), c); }
+        }
+      } else b.charge = Math.max(0, b.charge - dt * 0.5);
+      if (b.state === "held") {
+        b.wob *= Math.exp(-dt * 3.5); b.x += b.vx * dt; b.y += b.vy * dt;
+        const hs = Math.hypot(hd.v.x, hd.v.y);
+        if (b.on > 0.7 && hd.surge > 0.26 && hs < 1.6 * H) { b.state = "push"; b.t = 0; hd.surge = 0; }               // pushed at the camera
+        else if (b.on > 0.7 && S.flick && hd.fast > 0.03) { const k = Math.min(1.2, 3.2 * H / hs); b.state = "fly"; b.t = 0; b.vx = hd.v.x * k; b.vy = hd.v.y * k; }   // thrown
+      }
+    }
+  }
+  if (b.state === "fly") {                                      // in the air until it meets the edge of the screen
+    b.t += dt; b.on = Math.min(1, b.on + dt * 3); b.wob = Math.max(b.wob, 0.25);
+    b.vy += ((b.el === "water" ? 0.9 : 0) + (b.loose ? 1.4 : 0)) * H * dt;
+    b.x += b.vx * dt; b.y += b.vy * dt;
+    const m = b.r * 0.45;
+    if (b.x < m || b.x > W - m || b.y < m || b.y > H - m || b.t > 2.2) {
+      burst(clamp(b.x, 0, W), clamp(b.y, 0, H), b.el, false, b.vx, b.vy); b.state = "none"; b.on = 0; b.cool = now + 900; return; }
+    splatVel(b.x, b.y, b.r * 1.2, b.vx * dt * 4, b.vy * dt * 4);
+    if (b.el === "fire") splatA(b.x, b.y, b.r * 0.7, 11 * dt, 0, 0, 0);       // a thrown fireball drags a tail of flame
+  } else if (b.state === "push") {                              // coming at the camera: it swells, then smashes on the screen
+    b.t += dt; const k = Math.min(1, b.t / 0.28); b.r = b.r0 * (1 + 3.4 * k * k); b.wob = 0.3;
+    if (k >= 1) { burst(b.x, b.y, b.el, true, 0, 0); b.r = b.r0; b.state = "none"; b.on = 0; b.cool = now + 1000; return; }
+  }
+  // the ball itself: it lights you up, and a little of its element leaks into the air
+  const R = b.r * b.on, c = ballCol(b.el);
+  light(b.x, b.y, R * 6 + H * 0.08, c, (b.el === "water" ? 0.45 : b.el === "magic" ? 0.8 : 1.25) * b.on * rnd(0.9, 1.08), 0.24);
+  if (b.el === "fire") {
+    splatA(b.x + rnd(-0.4, 0.4) * R, b.y - R * 0.45, R * 0.55, 7 * dt * b.on, 0, 0, 0); splatVel(b.x, b.y - R * 0.5, R, 0, -0.25 * H * dt * 8);
+    if (Math.random() < dt * 45 * b.on) spawn("ember", b.x + rnd(-0.8, 0.8) * R, b.y + rnd(-0.8, 0.3) * R, rnd(-0.08, 0.08) * H, -rnd(0.05, 0.25) * H, rnd(0.6, 2.2), rnd(0.9, 2.1));
+    emitters.push({ x: b.x, y: b.y, dx: 0, dy: -1, speed: 0, r: R, el: "fire", owner: b.state === "held" ? hd.id : "ball", pw: 1.4 * b.on });
+  } else if (b.el === "water") {
+    if (Math.random() < dt * 5 * b.on) spawn("drop", b.x + rnd(-0.5, 0.5) * R, b.y + R * 0.85, 0, 0.05 * H, rnd(0.5, 1), rnd(1.5, 2.5));
+  } else {
+    const k = 1.2 * dt * b.on; splatB(b.x + rnd(-0.5, 0.5) * R, b.y + rnd(-0.5, 0.5) * R, R * 0.6, c[0] * k, c[1] * k, c[2] * k, 0.3 * k);
+    if (Math.random() < dt * 30 * b.on) { const a = rnd(0, 6.283);
+      spawn("spark", b.x + Math.cos(a) * R * 1.15, b.y + Math.sin(a) * R * 1.15, -Math.sin(a) * 0.25 * H, Math.cos(a) * 0.25 * H, rnd(0.4, 1.1), rnd(4, 9), c); }
+  }
+}
+// Heat and cold landing on each hand: ice builds a shell of frost, fire melts it into drips and steam.
+function exposures(dt) {
+  for (const h of [hands.L, hands.R]) {
+    if (!h.vis) continue;
+    let heat = 0, cold = 0;
+    for (const e of emitters) {
+      if (e.owner === h.id || (e.el !== "fire" && e.el !== "ice")) continue;
+      const rx = h.c.x - e.x, ry = h.c.y - e.y, d = Math.hypot(rx, ry);
+      const reach = e.r * 3 + e.speed * 0.5 + h.size * 0.6;
+      let hit = 0;
+      if (d < e.r * 2 + h.size * 0.75) hit = 1;
+      else { const al = rx * e.dx + ry * e.dy;
+        if (al > 0 && al < reach) { const pe = Math.abs(rx * e.dy - ry * e.dx); if (pe < e.r * 1.5 + al * 0.4 + h.size * 0.7) hit = Math.max(0.25, 1 - al / reach); } }
+      if (e.el === "fire") heat += hit * e.pw; else cold += hit * e.pw;
+    }
+    const el = S[h.id], src = S["src" + h.id];
+    if (el === "ice" && src === "whole") cold += 1.2;
+    if (el === "fire" && (h.open > 0.4 || src === "whole" || !S.fist)) heat += 0.5;
+    heat = Math.min(heat, 2.5); cold = Math.min(cold, 2);
+    const before = h.frost;
+    h.frost = clamp(h.frost + dt * (cold * 0.9 - heat * 1.25 - 0.03), 0, 1);
+    if (heat > 0.1 && before > 0.03) {                          // melting
+      for (let k = 0; k < 3; k++) { const p = h.P[(Math.random() * 21) | 0];
+        splatA(p.x, p.y, h.size * 0.14, 0, 0, 2.2 * dt * Math.min(heat, 1.5), 0);
+        if (Math.random() < dt * 16) spawn("drop", p.x, p.y, rnd(-0.03, 0.03) * H, rnd(0, 0.1) * H, rnd(0.6, 1.2), rnd(1.5, 2.6)); }
+    } else if (h.frost > 0.05 && Math.random() < dt * 7 * h.frost) {
+      const p = h.P[(Math.random() * 21) | 0]; spawn("glint", p.x + rnd(-0.3, 0.3) * h.size, p.y + rnd(-0.3, 0.3) * h.size, 0, 0, rnd(0.15, 0.4), rnd(5, 12));
+    }
+  }
+}
+// The shell of ice over a frozen hand. This layer only holds how thick the ice is at each point (white = thick);
+// the scene turns that into facets, cracks, highlights and the bent view of the hand inside.
+const iceC = document.createElement("canvas"), scratch = document.createElement("canvas"); let overOn = false;
+const SHARDS = (() => { const r = seeded(11), out = [];
+  for (const i of [8, 12, 16, 20, 4]) out.push([i, 0.75 + r() * 0.4, 0, 0.11]);
+  for (const i of [5, 9, 13, 17, 6, 10, 14, 18, 2, 3, 0, 1, 7, 11, 15, 19]) for (let k = 0; k < 2; k++) out.push([i, 0.22 + r() * 0.5, (r() - 0.5) * 1.9, 0.06 + r() * 0.06]);
+  return out; })();
+function drawIceHand(g, h) {
+  const P = h.P, f = h.frost, d = h.span, s = scratch.getContext("2d");
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (const p of P) { x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y); x1 = Math.max(x1, p.x); y1 = Math.max(y1, p.y); }
+  const pad = d * 1.3; x0 = Math.max(0, Math.floor(x0 - pad)); y0 = Math.max(0, Math.floor(y0 - pad)); x1 = Math.min(W, Math.ceil(x1 + pad)); y1 = Math.min(H, Math.ceil(y1 + pad));
+  if (x1 <= x0 || y1 <= y0) return;
+  s.globalCompositeOperation = "source-over"; s.clearRect(x0, y0, x1 - x0, y1 - y0); s.lineJoin = s.lineCap = "round";
+  const palm = new Path2D(); PALM.forEach((i, k) => k ? palm.lineTo(P[i].x, P[i].y) : palm.moveTo(P[i].x, P[i].y)); palm.closePath();
+  const fingers = new Path2D(); for (const c of FINGERS) c.forEach((i, k) => k ? fingers.lineTo(P[i].x, P[i].y) : fingers.moveTo(P[i].x, P[i].y));
+  for (const [wd, gray] of [[0.5, 60], [0.4, 105], [0.3, 150], [0.2, 195], [0.1, 232], [0.03, 255]]) {      // nested outlines make a rounded surface
+    s.fillStyle = s.strokeStyle = "rgb(" + gray + "," + gray + "," + gray + ")"; s.lineWidth = d * wd; s.fill(palm); s.stroke(palm); s.stroke(fingers); }
+  const grow = smooth(0.2, 1, f);                                // shards grow out of the knuckles and fingertips, each with a ridge down its middle
+  if (grow > 0.02) for (const [i, len, turn, wd] of SHARDS) {
+    let dx = P[i].x - h.c.x, dy = P[i].y - h.c.y;
+    if (i % 4 === 0 && i) { dx = P[i].x - P[i - 1].x; dy = P[i].y - P[i - 1].y; }
+    const an = Math.atan2(dy, dx) + turn, ux = Math.cos(an), uy = Math.sin(an), L = d * len * grow, bw = d * wd * (0.6 + 0.4 * grow);
+    const bx = P[i].x, by = P[i].y, tx = bx + ux * L, ty = by + uy * L;
+    const sg = s.createLinearGradient(bx - uy * bw, by + ux * bw, bx + uy * bw, by - ux * bw);
+    sg.addColorStop(0, "rgb(70,70,70)"); sg.addColorStop(0.5, "rgb(255,255,255)"); sg.addColorStop(1, "rgb(70,70,70)");
+    s.fillStyle = sg; s.beginPath(); s.moveTo(bx - uy * bw, by + ux * bw); s.lineTo(tx, ty); s.lineTo(bx + uy * bw, by - ux * bw); s.closePath(); s.fill();
+  }
+  g.save(); g.globalAlpha = Math.min(1, f * 1.2);
+  try { g.filter = "blur(" + Math.max(0.6, d * 0.03).toFixed(1) + "px)"; } catch (e) {}
+  g.drawImage(scratch, x0, y0, x1 - x0, y1 - y0, x0, y0, x1 - x0, y1 - y0); g.restore();
+}
+function drawOverlay() {
+  const any = (hands.L.vis && hands.L.frost > 0.02) || (hands.R.vis && hands.R.frost > 0.02);
+  if (!any) { overOn = false; return; }
+  const g = iceC.getContext("2d"); g.clearRect(0, 0, W, H);
+  for (const h of [hands.L, hands.R]) if (h.vis && h.frost > 0.02) { drawIceHand(g, h); light(h.c.x, h.c.y, h.size * 1.8, LIGHT.ice, 0.35 * h.frost, 0.25); }
+  bindTex(15, texOver); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, iceC);
+  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+  overOn = true;
+}
+
+// ------------------------------ face, breath and blowing ------------------------------
+const face = { found: false, seen: 0, x: 0, y: 0, dx: 0, dy: 0, toward: 1, open: 0, pucker: 0, narrow: 0, base: 0, mw: 60, size: 100, breath: 0, blow: 0 };
+function readFace(lms, blend, now) {
+  const p = i => [lms[i].x * W, lms[i].y * H, (lms[i].z || 0) * W];
+  const d3 = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+  const e0 = p(33), e1 = p(263), top = p(10), chin = p(152), u = p(13), l = p(14), m0 = p(61), m1 = p(291);
+  const a = [e1[0] - e0[0], e1[1] - e0[1]], eye = d3(e0, e1) || 1, mw = d3(m0, m1) || 1, wr = mw / eye;
+  // Where the head points, read straight from the picture: the nose sticks out, so its tip slides toward the side you turn to,
+  // away from the middle of the face (the two sides by the ears, the forehead and the chin). No depth values are involved, so it cannot come out backwards.
+  const nose = p(1), s0 = p(234), s1 = p(454);
+  let ax = chin[0] - top[0], ay = chin[1] - top[1]; const fh = Math.hypot(ax, ay) || 1; ax /= fh; ay /= fh;        // down the face
+  const sc = 0.5 * (eye + fh / 1.85);
+  let nx = ((nose[0] - (s0[0] + s1[0] + top[0] + chin[0]) / 4) / sc - 0.3 * ax) / 0.6, ny = ((nose[1] - (s0[1] + s1[1] + top[1] + chin[1]) / 4) / sc - 0.3 * ay) / 0.6;
+  const nl = Math.hypot(nx, ny); if (nl > 1) { nx /= nl; ny /= nl; }
+  const nz = -Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny));
+  // mouth open: the gap between the lips against the width between the eyes, or the tracker's own jaw reading, whichever is larger
+  const openG = clamp(d3(u, l) / eye / 0.36, 0, 1);
+  let jaw = 0, pk = -1;
+  if (blend) for (const c of blend.categories) { if (c.categoryName === "jawOpen") jaw = c.score; else if (c.categoryName === "mouthPucker") pk = Math.max(pk, c.score); else if (c.categoryName === "mouthFunnel") pk = Math.max(pk, c.score * 0.8); }
+  const open = Math.max(openG, jaw);
+  // pursed lips: the mouth gets clearly narrower than its own resting width, which is learned while the mouth is at rest
+  if (!face.base || now - face.seen > 3000) face.base = wr;
+  if (openG < 0.12 && pk < 0.35) face.base += (wr - face.base) * 0.015;
+  const narrow = clamp((face.base - wr) / face.base, 0, 1), thr = mixn(0.22, 0.07, S.blowsens);
+  let pucker = smooth(thr, thr + 0.1, narrow);
+  if (pk >= 0) pucker *= smooth(0.15, 0.45, pk);
+  const k = face.found ? 0.5 : 1;
+  face.x += (W - (u[0] + l[0]) / 2 - face.x) * k; face.y += ((u[1] + l[1]) / 2 - face.y) * k;
+  face.dx += (-nx - face.dx) * k; face.dy += (ny - face.dy) * k; face.toward += (-nz - face.toward) * k;
+  face.open += (open - face.open) * k; face.pucker += (pucker - face.pucker) * k; face.narrow = narrow;
+  face.mw = Math.hypot(m1[0] - m0[0], m1[1] - m0[1]) || 1; face.size = Math.hypot(a[0], a[1]) || 1; face.found = true; face.seen = now;
+  faceRelief(lms); faceMeshAt = now;
+}
+let mic = null;
+async function setMic(on) {
+  if (!on) { if (mic) { mic.stream.getTracks().forEach(t => t.stop()); mic.ctx.close(); mic = null; } $("microw").hidden = true; return; }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    const ctx = new (window.AudioContext || window.webkitAudioContext)(), an = ctx.createAnalyser();
+    an.fftSize = 1024; ctx.createMediaStreamSource(stream).connect(an);
+    mic = { stream, ctx, an, buf: new Float32Array(1024), floor: 0.02, level: 0 };
+    $("microw").hidden = false;
+  } catch (e) { $("mic").checked = false; setStatus("Microphone blocked. Blowing still works from the shape of your lips.", "bad"); }
+}
+$("mic").onchange = e => setMic(e.target.checked);
+function micLevel() {
+  if (!mic) return 0;
+  mic.an.getFloatTimeDomainData(mic.buf);
+  let s = 0; for (let i = 0; i < mic.buf.length; i++) s += mic.buf[i] * mic.buf[i];
+  const rms = Math.sqrt(s / mic.buf.length);
+  mic.floor += (rms - mic.floor) * (rms < mic.floor ? 0.2 : 0.002);
+  mic.level += (clamp((rms - mic.floor * 1.6) / 0.1, 0, 1) - mic.level) * 0.4;
+  return mic.level;
+}
+function breath(dt, now) {
+  if (!face.found) { face.breath = face.blow = 0; return; }
+  const f = face, t = clamp(f.toward, 0, 1), d2 = Math.hypot(f.dx, f.dy), nx = f.dx / (d2 || 1), ny = f.dy / (d2 || 1), lvl = micLevel();
+  const lo = mixn(0.45, 0.12, S.mouthsens);                     // how far the mouth must open before anything comes out
+  let br = S.M === "off" ? 0 : smooth(lo, lo + 0.18, f.open);
+  if (mic) br *= clamp(0.6 + lvl * 1.2, 0, 1.5);
+  f.breath = br;
+  if (br > 0.03) {                                             // breathing the element out
+    // Facing the camera there is no sideways direction to aim along, so the breath fans out forward and down, away from the eyes.
+    let bx = f.dx, by = f.dy + 0.85 * t * t; const fan = rnd(-0.55, 0.55) * t * t, cf = Math.cos(fan), sf = Math.sin(fan);
+    [bx, by] = [bx * cf - by * sf, bx * sf + by * cf];
+    const bl = Math.hypot(bx, by) || 1, reach = Math.max(d2, 0.5); bx /= bl; by /= bl;
+    const rad = f.mw * 0.37 * S.size * (1 + 0.3 * t), sp = (0.5 + S.force) * 1.6 * H * reach;
+    const x = f.x + bx * f.mw * 0.55, y = f.y + by * f.mw * 0.55, n0 = lights.length;
+    emit(S.M, x, y, bx, by, rad, br * (S.M === "ice" ? 0.75 : 0.85), sp, "M", dt, now, 2.6);
+    if (lights.length > n0) { const L = lights[lights.length - 1]; L[0] = (x + bx * f.mw * 1.2) / W; L[1] = 1 - (y + by * f.mw * 1.2) / H; L[3] = 0.3; }   // the light sits out in front of the face
+    for (let k = 1; k <= 4; k++)                                 // the breath is a jet: it carries the flame clear of the face before it rises
+      splatVel(x + bx * f.mw * k * 0.9, y + by * f.mw * k * 0.9, f.mw * (0.5 + 0.22 * k), bx * sp * br * dt * 5 * (1 - k / 6), by * sp * br * dt * 5 * (1 - k / 6));
+    splatVel(f.x + bx * f.mw * 1.2, f.y + by * f.mw * 1.2, f.mw * 1.4, t * t * t * 0.3 * H * br * dt * 8, 0, true);   // only spreads outward when it comes straight at the camera
+  }
+  // blowing air: only while the lips are pursed and the mouth is not open, and never as strong as a breath of fire
+  let bl = 0;
+  if (S.blow) { bl = f.pucker * (1 - smooth(lo * 0.5, lo, f.open)); bl *= mic ? clamp(0.3 + lvl * 1.8, 0, 1.5) : 0.8; }
+  f.blow += (bl - f.blow) * 0.3;
+  if (f.blow > 0.04) {
+    const Wd = (0.35 + 1.5 * S.blowpower) * 0.75 * H * f.blow, R = f.size * 2;
+    const side = smooth(0.12, 0.38, d2);                        // 0 facing the camera, 1 once the head is clearly turned, left or right alike
+    if (side < 0.98) splatVel(f.x, f.y, R * 0.6, Wd * 0.7 * (1 - side) * dt * 7, 0, true);            // straight at the camera: a soft push away from the mouth
+    if (side > 0.02) for (let k = 0; k < 6; k++) { const dist = f.size * (0.5 + k * 0.9), r = f.size * (0.45 + 0.3 * k), fall = 1 - k / 7;
+      splatVel(f.x + nx * dist, f.y + ny * dist, r, nx * Wd * side * fall * dt * 8, ny * Wd * side * fall * dt * 8); }   // turned: a stream the way the head points
+    if (Math.random() < dt * 30) { const a = side > 0.5 ? Math.atan2(ny, nx) + rnd(-0.4, 0.4) : rnd(0, 6.28), r0 = f.mw * rnd(0.3, 0.8);
+      spawn("air", f.x + Math.cos(a) * r0, f.y + Math.sin(a) * r0, Math.cos(a) * Wd * 0.5, Math.sin(a) * Wd * 0.5, rnd(0.25, 0.5), 1); }
+  }
+}
+
+// ------------------------------ per-frame update ------------------------------
+let frames = 0, fps = 0, fpsAt = 0, dataAt = 0, rec = null;
+function frame(now, dt) {
+  lights.length = 0; emitters.length = 0;
+  readVelPoll();
+  for (const h of [hands.L, hands.R]) {
+    if (h.vis && now - h.seen > 260) h.vis = false;
+    if (h.vis) handEmit(h, dt, now); else h.frost = Math.max(0, h.frost - dt * 0.4);
+  }
+  updateBall(dt, now);
+  if (face.found && now - face.seen > 300) face.found = false;
+  breath(dt, now);
+  updateShots(dt, now);
+  exposures(dt);
+  stepSim(dt);
+  readVelStart();
+  const n = updateParts(dt);
+  drawOverlay();
+  drawBolts(now);
+  render(now, n);
+  drawHud(now);
+  if (rec) { rec.g.drawImage($("gl"), 0, 0, rec.c.width, rec.c.height);
+    const s = Math.floor((now - rec.t0) / 1000); $("recdot").textContent = "REC " + Math.floor(s / 60) + ":" + ("0" + s % 60).slice(-2); }
+  $("m_open").style.width = Math.round(clamp(face.found ? face.open : 0, 0, 1) * 100) + "%";
+  $("m_blow").style.width = Math.round(clamp(face.blow / 0.8, 0, 1) * 100) + "%";
+  if (mic) $("m_mic").style.width = Math.round(mic.level * 100) + "%";
+  frames++;
+  if (now - fpsAt >= 1000) { fps = Math.round(frames * 1000 / (now - fpsAt)); frames = 0; fpsAt = now; }
+}
+function drawHud(now) {
+  const g = $("hud").getContext("2d"); g.clearRect(0, 0, W, H);
+  if (!S.showdata) return;
+  g.strokeStyle = "rgba(255,183,3,.9)"; g.fillStyle = "#ffb703"; g.lineWidth = 1.5;
+  for (const h of [hands.L, hands.R]) { if (!h.vis) continue;
+    for (const c of [[0,1,2,3,4],[0,5,6,7,8],[5,9,10,11,12],[9,13,14,15,16],[13,17,18,19,20],[0,17]]) {
+      g.beginPath(); c.forEach((i, k) => k ? g.lineTo(h.P[i].x, h.P[i].y) : g.moveTo(h.P[i].x, h.P[i].y)); g.stroke(); }
+    for (const p of h.P) { g.beginPath(); g.arc(p.x, p.y, 3, 0, 6.3); g.fill(); }
+    g.font = "600 13px system-ui,sans-serif"; g.fillText(h.id === "L" ? "left" : "right", h.P[0].x + 8, h.P[0].y + 16);
+  }
+  if (face.found) { g.strokeStyle = "rgba(127,255,170,.9)"; g.fillStyle = "rgba(127,255,170,.9)";
+    g.beginPath(); g.arc(face.x, face.y, 5, 0, 6.3); g.fill();
+    g.beginPath(); g.moveTo(face.x, face.y); g.lineTo(face.x + face.dx * face.size * 1.5, face.y + face.dy * face.size * 1.5); g.stroke(); }
+  if (now - dataAt > 120) {
+    dataAt = now;
+    const pad = k => (k + "             ").slice(0, 13), rows = [];
+    for (const h of [hands.L, hands.R]) rows.push([h.id === "L" ? "left hand" : "right hand",
+      h.vis ? h.ext.map(e => e > 0.5 ? "|" : ".").join("") + "  frost " + h.frost.toFixed(2) : "not found"]);
+    if (face.found) rows.push(["mouth open", face.open.toFixed(2) + "  (fires at " + mixn(0.45, 0.12, S.mouthsens).toFixed(2) + ")"],
+      ["lips pursed", face.pucker.toFixed(2) + "  (narrower by " + Math.round(face.narrow * 100) + "%)"],
+      ["head turned", Math.abs(face.dx) < 0.15 ? "to the camera" : (face.dx > 0 ? "right " : "left ") + Math.round(Math.abs(face.dx) * 100) + "% (as you see it on screen)"]);
+    else rows.push(["face", "not found"]);
+    if (mic) rows.push(["microphone", mic.level.toFixed(2)]);
+    rows.push(["body outline", body.has ? "on" + (body.hasRelief ? ", face relief on" : "") : "off"], ["fluid grid", gridKey.split("/").slice(0, 2).join(" / ")],
+      ["sparks", String(parts.length)], ["speed", fps + " frames/s"]);
+    $("data").textContent = rows.map(r => pad(r[0]) + r[1]).join("\n");
+  }
+}
+
+// ------------------------------ recording ------------------------------
+$("record").onclick = () => {
+  if (rec) { rec.mr.stop(); return; }
+  if (!gl || $("gl").hidden) { setStatus("Start the camera first, then record.", "bad"); return; }
+  if (!window.MediaRecorder) { setStatus("This browser cannot record video.", "bad"); return; }
+  const c = document.createElement("canvas"); c.width = $("gl").width; c.height = $("gl").height;
+  const mime = ["video/mp4;codecs=avc1.42E01E", "video/webm;codecs=vp9", "video/webm"].find(m => MediaRecorder.isTypeSupported(m)) || "";
+  const mr = new MediaRecorder(c.captureStream(30), mime ? { mimeType: mime, videoBitsPerSecond: 10e6 } : undefined), chunks = [];
+  mr.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+  mr.onstop = () => {
+    const blob = new Blob(chunks, { type: mr.mimeType || "video/webm" }), a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "elemental-mirror." + ((mr.mimeType || "").includes("mp4") ? "mp4" : "webm");
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    rec = null; $("recdot").hidden = true; $("record").textContent = "Record a clip"; $("record").classList.remove("on");
+  };
+  rec = { c, g: c.getContext("2d"), mr, t0: performance.now() };
+  mr.start(); $("recdot").hidden = false; $("record").textContent = "Stop and save"; $("record").classList.add("on");
+};
+
+// ------------------------------ start-up ------------------------------
+let faceTracker = null, handTracker = null, segmenter = null;
+async function loadTrackers() {
+  const vision = await import(MP + "/vision_bundle.mjs");
+  const files = await vision.FilesetResolver.forVisionTasks(MP + "/wasm");
+  const mkFace = d => vision.FaceLandmarker.createFromOptions(files, { baseOptions: { modelAssetPath: FACE_MODEL, delegate: d },
+    runningMode: "VIDEO", numFaces: 1, outputFaceBlendshapes: true });
+  const mkHand = d => vision.HandLandmarker.createFromOptions(files, { baseOptions: { modelAssetPath: HAND_MODEL, delegate: d },
+    runningMode: "VIDEO", numHands: 2 });
+  try { handTracker = await mkHand("GPU"); } catch (e) { handTracker = await mkHand("CPU"); }
+  try { try { faceTracker = await mkFace("GPU"); } catch (e) { faceTracker = await mkFace("CPU"); } }
+  catch (e) { faceTracker = null; }                          // the hands still work without the face tracker
+  if (vision.ImageSegmenter) for (const url of SEG_MODELS) {  // body outline, for the depth map and the background
+    for (const d of ["GPU", "CPU"]) {
+      try { segmenter = await vision.ImageSegmenter.createFromOptions(files, { baseOptions: { modelAssetPath: url, delegate: d },
+        runningMode: "VIDEO", outputConfidenceMasks: true, outputCategoryMask: false }); break; } catch (e) { segmenter = null; }
+    }
+    if (segmenter) break;
+  }
+}
+// Which hand is which. The tracker's own left/right label flips from frame to frame, so it is not used at all.
+// A hand keeps its slot for as long as it is followed; slots are only handed out when hands first appear:
+// two hands are told apart by which is further left in the mirror, one hand by which side of your face it is on.
+function assignHands(list, now) {
+  const det = list.map(lm => ({ lm, x: (lm[0].x + lm[9].x) / 2, y: (lm[0].y + lm[9].y) / 2, s: Math.hypot(lm[0].x - lm[9].x, lm[0].y - lm[9].y) }));
+  if (det.length > 1 && Math.hypot(det[0].x - det[1].x, det[0].y - det[1].y) < 0.6 * Math.max(det[0].s, det[1].s)) det.length = 1;   // one hand reported twice
+  const L = hands.L, R = hands.R, liveL = L.vis && now - L.seen < 600, liveR = R.vis && now - R.seen < 600;
+  const dist = (d, h) => Math.hypot(d.x - h.cx, d.y - h.cy);
+  let toL = null, toR = null;
+  if (det.length >= 2) {
+    const [a, b] = det;
+    if (liveL && liveR) { if (dist(a, L) + dist(b, R) <= dist(a, R) + dist(b, L)) { toL = a; toR = b; } else { toL = b; toR = a; } }   // both followed: nearest keeps its slot
+    else if (a.x >= b.x) { toL = a; toR = b; } else { toL = b; toR = a; }      // a hand just appeared: your left hand is on the left of the mirror (the camera sees it on its right)
+  } else if (det.length === 1) {
+    const a = det[0];
+    if (liveL && liveR) { if (dist(a, L) <= dist(a, R)) toL = a; else toR = a; }
+    else if (liveL || liveR) { const h = liveL ? L : R;
+      if (dist(a, h) < 0.3) { if (liveL) toL = a; else toR = a; } else if (liveL) toR = a; else toL = a; }       // near the hand we know: the same hand. Far away: the other one
+    else { const mid = face.found ? 1 - face.x / W : 0.5; if (a.x >= mid) toL = a; else toR = a; }
+  }
+  if (toL) updateHand(L, toL.lm, now);
+  if (toR) updateHand(R, toR.lm, now);
+}
+const segC = document.createElement("canvas");
+function runSegmenter(now, hadFace) {
+  const sw = 256, sh = Math.max(16, Math.round(256 * video.videoHeight / (video.videoWidth || 1)));
+  if (segC.width !== sw || segC.height !== sh) { segC.width = sw; segC.height = sh; }
+  segC.getContext("2d").drawImage(video, 0, 0, sw, sh);
+  segmenter.segmentForVideo(segC, now, res => {
+    const ms = res.confidenceMasks; if (!ms || !ms.length) return;
+    const multi = ms.length > 1, mk = ms[0], f = mk.getAsFloat32Array(), w = mk.width, h = mk.height, n = w * h;
+    if (!maskU8 || maskU8.length !== n) maskU8 = new Uint8Array(n);
+    if (multi) for (let i = 0; i < n; i++) maskU8[i] = (1 - f[i]) * 255; else for (let i = 0; i < n; i++) maskU8[i] = f[i] * 255;
+    // Models differ in whether the person is the bright or the dark part, so check against a point that is certainly on the body.
+    const probe = (sx, sy) => { const v = maskU8[clamp(Math.round(sy / H * h), 0, h - 1) * w + clamp(Math.round((1 - sx / W) * w), 0, w - 1)] / 255;
+      body.score += ((body.inv ? 1 - v : v) - body.score) * 0.1; body.n++; };
+    if (hadFace) probe(face.x, face.y - face.size * 0.4);
+    for (const hd of [hands.L, hands.R]) if (hd.vis && now - hd.seen < 80) probe(hd.c.x, hd.c.y);
+    if (body.n > 25 && body.score < 0.3) { body.inv = 1 - body.inv; body.score = 0.8; body.n = 0; }
+    uploadMask(maskU8, w, h);
+  });
+}
+function liveLoop() {
+  let lastTime = -1, last = performance.now(), said = "", vf = 0;
+  const say = (t, c) => { if (said !== t) { said = t; setStatus(t, c); } };
+  $("gl").hidden = false;
+  function tick() {
+    requestAnimationFrame(tick);
+    const now = performance.now(), dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (video.readyState >= 2 && video.currentTime !== lastTime) {
+      lastTime = video.currentTime; vf++;
+      try {
+        uploadVideo(video);
+        assignHands((handTracker.detectForVideo(video, now).landmarks || []), now);
+        let hadFace = false;
+        if (faceTracker) {
+          const fr = faceTracker.detectForVideo(video, now), lms = fr.faceLandmarks && fr.faceLandmarks[0];
+          if (lms) { readFace(lms, fr.faceBlendshapes && fr.faceBlendshapes[0], now); hadFace = true; }
+        }
+        if (segmenter && (S.quality !== "low" || vf % 2 === 0)) runSegmenter(now, hadFace);
+        bodyUpdate(now);
+      } catch (e) { say("The tracker hit an error: " + e.message, "bad"); }
+    }
+    const n = (hands.L.vis ? 1 : 0) + (hands.R.vis ? 1 : 0);
+    if (!said.startsWith("The tracker hit")) say((n ? "Tracking " + (n === 2 ? "both hands" : "one hand") + (face.found ? " and your face." : ".")
+      : face.found ? "Face found. Hold up a hand, or open your mouth." : "Hold up a hand where the camera can see it.")
+      + (segmenter ? "" : " The body outline could not load, so the background and depth lighting are off."), n || face.found ? "ok" : "");
+    frame(now, dt);
+  }
+  tick();
+}
+
+// Built-in test scene (open the page with #demo): pretend hands, face and body outline, no camera.
+function demoHand(cx, cy, sc, ang, curl, flip) {
+  const pts = [[0, 0], [-0.30, -0.18], [-0.55, -0.42], [-0.85, -0.72], [-1.05, -1.0]];
+  for (let i = 2; i < 5; i++) { const k = curl[0] * 0.85 * (i - 1) / 3; pts[i] = [pts[i][0] + (-0.1 - pts[i][0]) * k, pts[i][1] + (-0.55 - pts[i][1]) * k]; }
+  const mcp = [[-0.28, -0.95], [-0.02, -1.0], [0.22, -0.94], [0.42, -0.82]], fan = [-0.14, 0, 0.12, 0.28];
+  const len = [[.42, .26, .22], [.47, .29, .23], [.43, .27, .22], [.33, .2, .18]];
+  for (let f = 0; f < 4; f++) { let x = mcp[f][0], y = mcp[f][1], acc = 0; pts.push([x, y]);
+    for (let j = 0; j < 3; j++) { acc += curl[f + 1] * 1.05; const L = len[f][j] * Math.cos(acc); x += Math.sin(fan[f]) * L; y -= Math.cos(fan[f]) * L; pts.push([x, y]); } }
+  const ca = Math.cos(ang), sa = Math.sin(ang);
+  return pts.map(([x, y]) => { if (flip) x = -x; return { x: cx + (x * ca - y * sa) * sc, y: cy + (x * sa + y * ca) * sc * W / H, z: 0 }; });
+}
+function demoLoop() {
+  $("intro").hidden = true; $("gl").hidden = false;
+  stage.style.setProperty("--ar", "1.7778"); resize(true);
+  setStatus("Demo scene (no camera).", "ok");
+  const sc = QS.get("scene"); if (sc && PRESETS[sc]) { for (const k in PRESETS[sc]) if (k !== "hint") S[k] = PRESETS[sc][k]; S.preset = sc; }
+  for (const k of ["L", "R", "M", "srcL", "srcR", "quality", "bg", "view", "ball", "ballHand"]) if (QS.get(k)) S[k] = QS.get(k);
+  for (const k of SLIDERS) if (QS.get(k)) S[k] = parseFloat(QS.get(k));
+  if (QS.has("data")) S.showdata = true;
+  syncUI(); resize(true); setBackground();
+  const room = document.createElement("canvas"); room.width = 960; room.height = 540;
+  const matte = document.createElement("canvas"); matte.width = 256; matte.height = 144;
+  const openAmt = parseFloat(QS.get("open") || "0"), blowAmt = parseFloat(QS.get("blow") || "0"), turn = parseFloat(QS.get("turn") || "0");
+  const fistL = QS.has("fistL"), still = QS.has("still"), apart = parseFloat(QS.get("apart") || "0.2"), flick = QS.has("flick");
+  let last = performance.now(), clock = last;
+  function person(g, w, h, lmL, lmR, flat) {                    // the same figure, as a picture and as a plain white outline
+    const c = (a, b) => flat ? "#fff" : a;
+    g.fillStyle = c("#3f5378"); g.beginPath(); g.ellipse(w * 0.5, h * 1.02, w * 0.24, h * 0.3, 0, 0, 6.3); g.fill();
+    g.fillStyle = c("#c79a7c"); g.fillRect(w * 0.47, h * 0.5, w * 0.06, h * 0.25);
+    g.beginPath(); g.ellipse(w * 0.5, h * 0.33, w * 0.085, h * 0.2, 0, 0, 6.3); g.fill();
+    g.fillStyle = c("#3a2a22"); g.beginPath(); g.ellipse(w * 0.5, h * 0.19, w * 0.09, h * 0.08, 0, 0, 6.3); g.fill();
+    if (!flat) { g.fillStyle = "#2a1c18"; g.beginPath(); g.ellipse(w * (0.5 - turn * 0.02), h * 0.43, w * (blowAmt ? 0.012 : 0.028), h * (0.008 + 0.05 * openAmt + 0.012 * blowAmt), 0, 0, 6.3); g.fill();
+      g.beginPath(); g.arc(w * 0.47, h * 0.3, 5, 0, 6.3); g.arc(w * 0.53, h * 0.3, 5, 0, 6.3); g.fill(); }
+    g.strokeStyle = g.fillStyle = c("#c79a7c"); g.lineJoin = g.lineCap = "round";
+    for (const lm of [lmL, lmR]) { const X = i => lm[i].x * w, Y = i => lm[i].y * h, d = Math.hypot(X(5) - X(17), Y(5) - Y(17));
+      g.lineWidth = d * 0.3; g.beginPath(); PALM.forEach((i, k) => k ? g.lineTo(X(i), Y(i)) : g.moveTo(X(i), Y(i))); g.closePath(); g.fill(); g.stroke();
+      g.lineWidth = d * 0.3; g.beginPath(); for (const f of FINGERS) f.forEach((i, k) => k ? g.lineTo(X(i), Y(i)) : g.moveTo(X(i), Y(i))); g.stroke();
+      g.lineWidth = d * 0.5; g.beginPath(); g.moveTo(X(0), Y(0)); g.lineTo(X(0) + (X(0) - X(9)) * 2, Y(0) + (Y(0) - Y(9)) * 2); g.stroke(); }
+  }
+  function tick() {
+    requestAnimationFrame(tick);
+    const real = performance.now(), dt = QS.get("dt") ? parseFloat(QS.get("dt")) : Math.min(0.05, (real - last) / 1000); last = real;
+    const now = QS.get("dt") ? (clock += dt * 1000) : real, t = now / 1000;      // with a fixed step the demo keeps its own clock, so it plays the same on any machine
+    const wob = still ? 0 : 1, cL = fistL ? [0.9, 1, 1, 1, 1] : [0, 0, 0, 0, 0];
+    const sweep = flick ? 0.25 * Math.sin(t * 7) : 0;
+    // camera-space (not mirrored): your left hand shows up on the right of the camera picture
+    const lmL = demoHand(0.5 + apart + 0.012 * Math.sin(t * 0.9) * wob, 0.82 + 0.01 * Math.sin(t * 1.3) * wob, 0.085, 0.12, cL, true);
+    const lmR = demoHand(0.5 - apart - 0.012 * Math.sin(t * 0.8) * wob + sweep, 0.82, 0.085, -0.12, [0, 0, 0, 0, 0], false);
+    const g = room.getContext("2d"), w = room.width, h = room.height;
+    const bgr = g.createLinearGradient(0, 0, w, h); bgr.addColorStop(0, "#5a6170"); bgr.addColorStop(1, "#2c303a"); g.fillStyle = bgr; g.fillRect(0, 0, w, h);
+    g.fillStyle = "#7d8798"; g.fillRect(w * 0.06, h * 0.08, w * 0.2, h * 0.34);
+    for (let i = 0; i < 7; i++) { g.fillStyle = ["#ffe9a8", "#ff9a6b", "#9fd0ff"][i % 3]; g.beginPath(); g.arc(w * (0.62 + i * 0.055), h * (0.12 + (i % 2) * 0.05), 4, 0, 6.3); g.fill(); }
+    person(g, w, h, lmL, lmR, false);
+    uploadVideo(room);
+    if (!QS.has("nobody")) { const mg = matte.getContext("2d"); mg.fillStyle = "#000"; mg.fillRect(0, 0, 256, 144); person(mg, 256, 144, lmL, lmR, true); uploadMask(matte); bodyUpdate(now); }
+    if (!QS.has("noL")) updateHand(hands.L, lmL, now);
+    if (!QS.has("noR")) updateHand(hands.R, lmR, now);
+    if (QS.has("push") && t % 4 > 3.6) hands.R.surge = 0.3;
+    const tl = Math.hypot(turn, 0.15, 1);
+    Object.assign(face, { found: true, seen: now, x: W * (0.5 + turn * 0.02), y: H * 0.43, dx: turn / tl, dy: 0.15 / tl, toward: 1 / tl,
+                          open: openAmt, pucker: blowAmt, mw: W * 0.055, size: W * 0.09 });
+    frame(now, dt);
+  }
+  tick();
+}
+
+new ResizeObserver(() => resize()).observe(stage);
+let glError = null;
+try { initGL(); resize(true); setBackground(); } catch (e) { glError = e; setStatus("Cannot start: " + e.message, "bad"); $("start").disabled = true; }
+
+$("start").onclick = async () => {
+  $("start").disabled = true;
+  let stageName = "camera";
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia)
+      throw new Error("this browser will not give this page a camera. Try Chrome or Edge.");
+    setStatus("Asking for the camera…");
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+    video.srcObject = stream;
+    await video.play();
+    if (video.videoWidth && video.videoHeight) stage.style.setProperty("--ar", (video.videoWidth / video.videoHeight).toFixed(4));
+    $("intro").hidden = true;
+    stageName = "trackers";
+    setStatus("Loading the hand, face and body trackers (first time takes a few seconds)…");
+    await loadTrackers();
+    resize(true);
+    liveLoop();
+  } catch (err) {
+    $("start").disabled = false; $("intro").hidden = false;
+    const denied = err && (err.name === "NotAllowedError" || err.name === "SecurityError");
+    const msg = err && err.message ? err.message : String(err);
+    setStatus(denied ? "Camera blocked. Allow camera access for this page and click Start again."
+            : "Could not load the " + stageName + ": " + msg, "bad");
+  }
+};
+
+window.__em = { hands, ball, shots, parts, S: () => S };                       // for looking at the state while testing
+if (DEMO && !glError) demoLoop();
+</script>
+</body>
+</html>
