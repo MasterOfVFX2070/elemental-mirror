@@ -59,6 +59,11 @@
   .small { font-size:12px; color:var(--dim); margin:0; }
   #hint { margin-top:10px; font-size:13px; color:var(--fg); }
   .stack { display:flex; flex-direction:column; gap:9px; margin-top:11px; }
+  .titlerow { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .langseg { display:flex; gap:7px; flex:none; }
+  .langseg button { font:inherit; font-size:12px; color:var(--fg); background:#0b0f18; border:1px solid var(--line);
+                    border-radius:9px; padding:6px 10px; cursor:pointer; }
+  .langseg button.on { background:var(--accent); border-color:var(--accent); color:#1c0f02; font-weight:700; }
   [hidden] { display:none !important; }
   @media (max-width:900px) { .wrap { flex-direction:column; align-items:stretch; } aside { flex:none; } .stage { width:100%; } .stagecol { position:static; } }
 </style>
@@ -72,149 +77,155 @@
       <canvas id="hud"></canvas>
       <div id="recdot" hidden>REC 0:00</div>
       <div id="intro">
-        <h2>ELEMENTAL MIRROR</h2>
-        <p>Fire, ice, water, lightning and magic from your own hands and mouth, lighting up your face and body. Swap the room behind you, blow on a flame, freeze a hand and breathe fire to melt it.</p>
-        <button class="big" id="start">Start camera</button>
+        <h2 data-i18n="intro.h2">ELEMENTAL MIRROR</h2>
+        <p data-i18n="intro.p">Fire, ice, water, lightning and magic from your own hands and mouth, lighting up your face and body. Swap the room behind you, blow on a flame, freeze a hand and breathe fire to melt it.</p>
+        <button class="big" id="start" data-i18n="intro.start">Start camera</button>
       </div>
     </div>
   </div>
 
   <aside>
-    <h1>Elemental Mirror</h1>
-    <div class="panel"><div id="status">Click Start camera, then allow the camera.</div></div>
+    <div class="titlerow">
+      <h1 data-i18n="title">Elemental Mirror</h1>
+      <div class="langseg" id="langseg">
+        <button data-lang="en">English</button>
+        <button data-lang="zh">中文</button>
+      </div>
+    </div>
+    <div class="panel"><div id="status" data-i18n="st.intro">Click Start camera, then allow the camera.</div></div>
 
     <div class="panel">
-      <h3>Try this</h3>
+      <h3 data-i18n="panel.try">Try this</h3>
       <div class="chips" id="presets">
-        <button data-preset="fireice">Fire and ice</button>
-        <button data-preset="dragon">Dragon breath</button>
-        <button data-preset="frozen">Freeze and melt</button>
-        <button data-preset="candles">Finger candles</button>
-        <button data-preset="storm">Storm</button>
-        <button data-preset="water">Water</button>
-        <button data-preset="wizard">Wizard</button>
-        <button data-preset="fireball">Fireball</button>
-        <button id="reset" type="button">Reset all</button>
+        <button data-preset="fireice" data-i18n="preset.fireice">Fire and ice</button>
+        <button data-preset="dragon" data-i18n="preset.dragon">Dragon breath</button>
+        <button data-preset="frozen" data-i18n="preset.frozen">Freeze and melt</button>
+        <button data-preset="candles" data-i18n="preset.candles">Finger candles</button>
+        <button data-preset="storm" data-i18n="preset.storm">Storm</button>
+        <button data-preset="water" data-i18n="preset.water">Water</button>
+        <button data-preset="wizard" data-i18n="preset.wizard">Wizard</button>
+        <button data-preset="fireball" data-i18n="preset.fireball">Fireball</button>
+        <button id="reset" type="button" data-i18n="ui.reset">Reset all</button>
       </div>
       <p class="small" id="hint"></p>
     </div>
 
     <div class="panel">
-      <h3>Left hand</h3>
+      <h3 data-i18n="panel.L">Left hand</h3>
       <div class="chips el" data-key="L">
-        <button data-el="off">Off</button><button data-el="fire"><i></i>Fire</button><button data-el="ice"><i></i>Ice</button>
-        <button data-el="water"><i></i>Water</button><button data-el="bolt"><i></i>Lightning</button><button data-el="magic"><i></i>Magic</button>
+        <button data-el="off"><span data-i18n="el.off">Off</span></button><button data-el="fire"><i></i><span data-i18n="el.fire">Fire</span></button><button data-el="ice"><i></i><span data-i18n="el.ice">Ice</span></button>
+        <button data-el="water"><i></i><span data-i18n="el.water">Water</span></button><button data-el="bolt"><i></i><span data-i18n="el.bolt">Lightning</span></button><button data-el="magic"><i></i><span data-i18n="el.magic">Magic</span></button>
       </div>
-      <div class="row"><label for="srcL">Comes out of</label>
-        <select id="srcL"><option value="palm">Palm</option><option value="index">Index fingertip</option><option value="tips">Every fingertip</option><option value="whole">The whole hand</option></select>
+      <div class="row"><label for="srcL" data-i18n="src.label">Comes out of</label>
+        <select id="srcL"><option value="palm" data-i18n="src.palm">Palm</option><option value="index" data-i18n="src.index">Index fingertip</option><option value="tips" data-i18n="src.tips">Every fingertip</option><option value="whole" data-i18n="src.whole">The whole hand</option></select>
       </div>
     </div>
 
     <div class="panel">
-      <h3>Right hand</h3>
+      <h3 data-i18n="panel.R">Right hand</h3>
       <div class="chips el" data-key="R">
-        <button data-el="off">Off</button><button data-el="fire"><i></i>Fire</button><button data-el="ice"><i></i>Ice</button>
-        <button data-el="water"><i></i>Water</button><button data-el="bolt"><i></i>Lightning</button><button data-el="magic"><i></i>Magic</button>
+        <button data-el="off"><span data-i18n="el.off">Off</span></button><button data-el="fire"><i></i><span data-i18n="el.fire">Fire</span></button><button data-el="ice"><i></i><span data-i18n="el.ice">Ice</span></button>
+        <button data-el="water"><i></i><span data-i18n="el.water">Water</span></button><button data-el="bolt"><i></i><span data-i18n="el.bolt">Lightning</span></button><button data-el="magic"><i></i><span data-i18n="el.magic">Magic</span></button>
       </div>
-      <div class="row"><label for="srcR">Comes out of</label>
-        <select id="srcR"><option value="palm">Palm</option><option value="index">Index fingertip</option><option value="tips">Every fingertip</option><option value="whole">The whole hand</option></select>
+      <div class="row"><label for="srcR" data-i18n="src.label">Comes out of</label>
+        <select id="srcR"><option value="palm" data-i18n="src.palm">Palm</option><option value="index" data-i18n="src.index">Index fingertip</option><option value="tips" data-i18n="src.tips">Every fingertip</option><option value="whole" data-i18n="src.whole">The whole hand</option></select>
       </div>
     </div>
 
     <div class="panel">
-      <h3>Ball in my palm</h3>
+      <h3 data-i18n="panel.ball">Ball in my palm</h3>
       <div class="chips el" data-key="ball">
-        <button data-el="off">Off</button><button data-el="fire"><i></i>Fireball</button><button data-el="water"><i></i>Water ball</button><button data-el="magic"><i></i>Magic ball</button>
+        <button data-el="off"><span data-i18n="ball.off">Off</span></button><button data-el="fire"><i></i><span data-i18n="ball.fire">Fireball</span></button><button data-el="water"><i></i><span data-i18n="ball.water">Water ball</span></button><button data-el="magic"><i></i><span data-i18n="ball.magic">Magic ball</span></button>
       </div>
-      <div class="row"><label for="ballHand">Held in</label>
-        <select id="ballHand"><option value="L">Left hand</option><option value="R">Right hand</option></select>
+      <div class="row"><label for="ballHand" data-i18n="ball.held">Held in</label>
+        <select id="ballHand"><option value="L" data-i18n="hand.L">Left hand</option><option value="R" data-i18n="hand.R">Right hand</option></select>
       </div>
-      <p class="small" style="margin-top:10px">Hold that hand open and the ball forms on your palm. Bring your other hand close to feed it, poke it, or slap it away. Flick your hand to throw it, or push your palm at the camera to smash it into the screen.</p>
+      <p class="small" style="margin-top:10px" data-i18n="ball.p">Hold that hand open and the ball forms on your palm. Bring your other hand close to feed it, poke it, or slap it away. Flick your hand to throw it, or push your palm at the camera to smash it into the screen.</p>
     </div>
 
     <div class="panel">
-      <h3>Mouth</h3>
+      <h3 data-i18n="panel.mouth">Mouth</h3>
       <div class="chips el" data-key="M">
-        <button data-el="off">Off</button><button data-el="fire"><i></i>Fire</button><button data-el="ice"><i></i>Ice</button>
-        <button data-el="water"><i></i>Water</button><button data-el="bolt"><i></i>Lightning</button><button data-el="magic"><i></i>Magic</button>
+        <button data-el="off"><span data-i18n="el.off">Off</span></button><button data-el="fire"><i></i><span data-i18n="el.fire">Fire</span></button><button data-el="ice"><i></i><span data-i18n="el.ice">Ice</span></button>
+        <button data-el="water"><i></i><span data-i18n="el.water">Water</span></button><button data-el="bolt"><i></i><span data-i18n="el.bolt">Lightning</span></button><button data-el="magic"><i></i><span data-i18n="el.magic">Magic</span></button>
       </div>
-      <p class="small" style="margin-top:10px">Open your mouth to breathe it out, and turn your head to aim. Purse your lips to blow air instead.</p>
-      <div class="row"><span>Mouth open</span><div class="meter"><i id="m_open"></i></div></div>
-      <div class="row"><label for="mouthsens">Opens easily <b id="mouthsensv"></b></label><input id="mouthsens" type="range" min="0" max="1" step="0.01"></div>
-      <div class="row"><span>Blowing</span><div class="meter"><i id="m_blow"></i></div></div>
-      <div class="row"><label for="blowsens">Blows easily <b id="blowsensv"></b></label><input id="blowsens" type="range" min="0" max="1" step="0.01"></div>
-      <div class="row"><label for="blowpower">Blow strength <b id="blowpowerv"></b></label><input id="blowpower" type="range" min="0" max="1" step="0.01"></div>
+      <p class="small" style="margin-top:10px" data-i18n="mouth.p">Open your mouth to breathe it out, and turn your head to aim. Purse your lips to blow air instead.</p>
+      <div class="row"><span data-i18n="mouth.open">Mouth open</span><div class="meter"><i id="m_open"></i></div></div>
+      <div class="row"><label for="mouthsens"><span data-i18n="mouth.opensens">Opens easily</span> <b id="mouthsensv"></b></label><input id="mouthsens" type="range" min="0" max="1" step="0.01"></div>
+      <div class="row"><span data-i18n="mouth.blowing">Blowing</span><div class="meter"><i id="m_blow"></i></div></div>
+      <div class="row"><label for="blowsens"><span data-i18n="mouth.blowsens">Blows easily</span> <b id="blowsensv"></b></label><input id="blowsens" type="range" min="0" max="1" step="0.01"></div>
+      <div class="row"><label for="blowpower"><span data-i18n="mouth.blowpower">Blow strength</span> <b id="blowpowerv"></b></label><input id="blowpower" type="range" min="0" max="1" step="0.01"></div>
       <div class="stack">
-        <label class="ck"><input type="checkbox" id="blow">Pursed lips blow air</label>
-        <label class="ck"><input type="checkbox" id="mic">Use the microphone, so blowing harder is stronger</label>
+        <label class="ck"><input type="checkbox" id="blow"><span data-i18n="ck.blow">Pursed lips blow air</span></label>
+        <label class="ck"><input type="checkbox" id="mic"><span data-i18n="ck.mic">Use the microphone, so blowing harder is stronger</span></label>
       </div>
-      <div class="row" id="microw" hidden><span>Microphone</span><div class="meter"><i id="m_mic"></i></div></div>
+      <div class="row" id="microw" hidden><span data-i18n="mic.label">Microphone</span><div class="meter"><i id="m_mic"></i></div></div>
     </div>
 
     <div class="panel">
-      <h3>Background</h3>
-      <div class="row first"><label for="bg">Behind me</label>
+      <h3 data-i18n="panel.bg">Background</h3>
+      <div class="row first"><label for="bg" data-i18n="bg.label">Behind me</label>
         <select id="bg">
-          <option value="room">My real room</option>
-          <option value="studio">Dark studio</option>
-          <option value="city">City at night</option>
-          <option value="volcano">Volcano</option>
-          <option value="icecave">Ice cave</option>
-          <option value="forest">Forest at night</option>
-          <option value="nebula">Deep space</option>
-          <option value="upload">My own picture…</option>
+          <option value="room" data-i18n="bg.room">My real room</option>
+          <option value="studio" data-i18n="bg.studio">Dark studio</option>
+          <option value="city" data-i18n="bg.city">City at night</option>
+          <option value="volcano" data-i18n="bg.volcano">Volcano</option>
+          <option value="icecave" data-i18n="bg.icecave">Ice cave</option>
+          <option value="forest" data-i18n="bg.forest">Forest at night</option>
+          <option value="nebula" data-i18n="bg.nebula">Deep space</option>
+          <option value="upload" data-i18n="bg.upload">My own picture…</option>
         </select>
       </div>
       <input type="file" id="bgfile" accept="image/*" hidden>
-      <div class="row"><label for="dof">Background blur <b id="dofv"></b></label><input id="dof" type="range" min="0" max="1" step="0.01"></div>
-      <div class="row"><label for="bgbright">Background brightness <b id="bgbrightv"></b></label><input id="bgbright" type="range" min="0" max="1.5" step="0.01"></div>
+      <div class="row"><label for="dof"><span data-i18n="bg.dof">Background blur</span> <b id="dofv"></b></label><input id="dof" type="range" min="0" max="1" step="0.01"></div>
+      <div class="row"><label for="bgbright"><span data-i18n="bg.bright">Background brightness</span> <b id="bgbrightv"></b></label><input id="bgbright" type="range" min="0" max="1.5" step="0.01"></div>
     </div>
 
     <div class="panel">
-      <h3>Light on my body</h3>
-      <div class="row first"><label for="relight">Light from the elements <b id="relightv"></b></label><input id="relight" type="range" min="0" max="2" step="0.01"></div>
-      <div class="row"><label for="amb">My own brightness <b id="ambv"></b></label><input id="amb" type="range" min="0.1" max="1.2" step="0.01"></div>
-      <div class="row"><label for="shape">Depth strength <b id="shapev"></b></label><input id="shape" type="range" min="0" max="2" step="0.01"></div>
-      <div class="row"><label for="view">Show</label>
+      <h3 data-i18n="panel.light">Light on my body</h3>
+      <div class="row first"><label for="relight"><span data-i18n="light.relight">Light from the elements</span> <b id="relightv"></b></label><input id="relight" type="range" min="0" max="2" step="0.01"></div>
+      <div class="row"><label for="amb"><span data-i18n="light.amb">My own brightness</span> <b id="ambv"></b></label><input id="amb" type="range" min="0.1" max="1.2" step="0.01"></div>
+      <div class="row"><label for="shape"><span data-i18n="light.shape">Depth strength</span> <b id="shapev"></b></label><input id="shape" type="range" min="0" max="2" step="0.01"></div>
+      <div class="row"><label for="view" data-i18n="light.view">Show</label>
         <select id="view">
-          <option value="final">Finished picture</option>
-          <option value="depth">Depth map</option>
-          <option value="normals">Surface directions</option>
-          <option value="mask">Body outline</option>
+          <option value="final" data-i18n="view.final">Finished picture</option>
+          <option value="depth" data-i18n="view.depth">Depth map</option>
+          <option value="normals" data-i18n="view.normals">Surface directions</option>
+          <option value="mask" data-i18n="view.mask">Body outline</option>
         </select>
       </div>
     </div>
 
     <div class="panel">
-      <h3>Power</h3>
-      <div class="row first"><label for="size">Size <b id="sizev"></b></label><input id="size" type="range" min="0.5" max="2" step="0.01"></div>
-      <div class="row"><label for="force">Force <b id="forcev"></b></label><input id="force" type="range" min="0" max="1" step="0.01"></div>
-      <div class="row"><label for="magic">Magic colour</label><input id="magic" type="color"></div>
+      <h3 data-i18n="panel.power">Power</h3>
+      <div class="row first"><label for="size"><span data-i18n="power.size">Size</span> <b id="sizev"></b></label><input id="size" type="range" min="0.5" max="2" step="0.01"></div>
+      <div class="row"><label for="force"><span data-i18n="power.force">Force</span> <b id="forcev"></b></label><input id="force" type="range" min="0" max="1" step="0.01"></div>
+      <div class="row"><label for="magic" data-i18n="power.magic">Magic colour</label><input id="magic" type="color"></div>
       <div class="stack">
-        <label class="ck"><input type="checkbox" id="fist">Closing your fist puts it out</label>
-        <label class="ck"><input type="checkbox" id="flick">A fast flick of the hand throws it</label>
+        <label class="ck"><input type="checkbox" id="fist"><span data-i18n="ck.fist">Closing your fist puts it out</span></label>
+        <label class="ck"><input type="checkbox" id="flick"><span data-i18n="ck.flick">A fast flick of the hand throws it</span></label>
       </div>
     </div>
 
     <div class="panel">
-      <h3>Look</h3>
-      <div class="row first"><label for="glow">Glow <b id="glowv"></b></label><input id="glow" type="range" min="0" max="1.5" step="0.01"></div>
-      <div class="row"><label for="smoke">Smoke <b id="smokev"></b></label><input id="smoke" type="range" min="0" max="1.5" step="0.01"></div>
-      <div class="row"><label for="quality">Detail</label>
-        <select id="quality"><option value="low">Low (fastest)</option><option value="med">Medium</option><option value="high">High</option><option value="ultra">Ultra</option></select>
+      <h3 data-i18n="panel.look">Look</h3>
+      <div class="row first"><label for="glow"><span data-i18n="look.glow">Glow</span> <b id="glowv"></b></label><input id="glow" type="range" min="0" max="1.5" step="0.01"></div>
+      <div class="row"><label for="smoke"><span data-i18n="look.smoke">Smoke</span> <b id="smokev"></b></label><input id="smoke" type="range" min="0" max="1.5" step="0.01"></div>
+      <div class="row"><label for="quality" data-i18n="look.quality">Detail</label>
+        <select id="quality"><option value="low" data-i18n="q.low">Low (fastest)</option><option value="med" data-i18n="q.med">Medium</option><option value="high" data-i18n="q.high">High</option><option value="ultra" data-i18n="q.ultra">Ultra</option></select>
       </div>
       <div class="chips" style="margin-top:12px">
-        <button id="clear" type="button">Clear the air</button>
-        <button id="record" type="button">Record a clip</button>
+        <button id="clear" type="button" data-i18n="ui.clear">Clear the air</button>
+        <button id="record" type="button" data-i18n="ui.record">Record a clip</button>
       </div>
     </div>
 
     <div class="panel">
-      <label class="ck"><input type="checkbox" id="showdata">Show tracking data</label>
+      <label class="ck"><input type="checkbox" id="showdata"><span data-i18n="ui.showdata">Show tracking data</span></label>
       <pre id="data" hidden></pre>
     </div>
 
-    <p class="small">A webcam has no depth sensor, so the depth map is estimated live from your body outline, the 478-point 3D mesh of your face and the 3D joints of your hands. The fire, mist, smoke and water are a fluid simulation on your graphics card. Video and sound are processed on this computer and never uploaded.</p>
+    <p class="small" data-i18n="foot">A webcam has no depth sensor, so the depth map is estimated live from your body outline, the 478-point 3D mesh of your face and the 3D joints of your hands. The fire, mist, smoke and water are a fluid simulation on your graphics card. Video and sound are processed on this computer and never uploaded.</p>
   </aside>
 </div>
 
@@ -222,7 +233,12 @@
 <script type="module">
 const $ = id => document.getElementById(id);
 const statusEl = $("status"), video = $("video"), stage = $("stage");
-function setStatus(text, cls) { statusEl.textContent = text; statusEl.className = cls || ""; }
+let statusInfo = null;                              // last status, so switching language can re-render it
+function setStatus(key, vars, cls) {
+  statusInfo = { key, vars, cls };
+  statusEl.textContent = fmt(t(key), vars); statusEl.className = cls || "";
+}
+function setStatusRaw(text, cls) { statusInfo = null; statusEl.textContent = text; statusEl.className = cls || ""; }
 const DEMO = location.hash.startsWith("#demo");      // built-in test scene, no camera needed
 const QS = new URLSearchParams(location.search);
 const MP = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
@@ -244,30 +260,191 @@ const DEFAULTS = { L: "ice", srcL: "palm", R: "fire", srcR: "palm", M: "fire", b
                    mouthsens: 0.5, blowsens: 0.5, blowpower: 0.4,
                    size: 1, force: 0.2, magic: "#b56cff", fist: true, flick: true,
                    bg: "room", dof: 0.4, bgbright: 0.6, relight: 1, amb: 0.62, shape: 1, view: "final",
-                   glow: 0.7, smoke: 0.6, quality: "med", showdata: false, preset: "fireice" };
+                   glow: 0.7, smoke: 0.6, quality: "med", showdata: false, preset: "fireice",
+                   lang: (navigator.languages || [navigator.language || "en"]).some(l => /^zh/i.test(l || "")) ? "zh" : "en" };
 let S = Object.assign({}, DEFAULTS);
 try { Object.assign(S, JSON.parse(localStorage.getItem("em_settings2") || "{}")); } catch (e) {}
 if (S.bg === "upload") S.bg = "room";
+{ const urlLang = QS.get("lang"); if (urlLang === "zh" || urlLang === "en") S.lang = urlLang; }   // ?lang=zh / ?lang=en overrides everything
 function save() { try { localStorage.setItem("em_settings2", JSON.stringify(S)); } catch (e) {} }
+
+// ------------------------------ text / translations ------------------------------
+const I18N = {
+  en: {
+    "title": "Elemental Mirror",
+    "intro.h2": "ELEMENTAL MIRROR",
+    "intro.p": "Fire, ice, water, lightning and magic from your own hands and mouth, lighting up your face and body. Swap the room behind you, blow on a flame, freeze a hand and breathe fire to melt it.",
+    "intro.start": "Start camera",
+    "st.intro": "Click Start camera, then allow the camera.",
+    "panel.try": "Try this", "panel.L": "Left hand", "panel.R": "Right hand", "panel.ball": "Ball in my palm",
+    "panel.mouth": "Mouth", "panel.bg": "Background", "panel.light": "Light on my body",
+    "panel.power": "Power", "panel.look": "Look",
+    "preset.fireice": "Fire and ice", "preset.dragon": "Dragon breath", "preset.frozen": "Freeze and melt",
+    "preset.candles": "Finger candles", "preset.storm": "Storm", "preset.water": "Water",
+    "preset.wizard": "Wizard", "preset.fireball": "Fireball", "ui.reset": "Reset all",
+    "el.off": "Off", "el.fire": "Fire", "el.ice": "Ice", "el.water": "Water", "el.bolt": "Lightning", "el.magic": "Magic",
+    "src.label": "Comes out of", "src.palm": "Palm", "src.index": "Index fingertip",
+    "src.tips": "Every fingertip", "src.whole": "The whole hand",
+    "ball.off": "Off", "ball.fire": "Fireball", "ball.water": "Water ball", "ball.magic": "Magic ball",
+    "ball.held": "Held in", "hand.L": "Left hand", "hand.R": "Right hand",
+    "ball.p": "Hold that hand open and the ball forms on your palm. Bring your other hand close to feed it, poke it, or slap it away. Flick your hand to throw it, or push your palm at the camera to smash it into the screen.",
+    "mouth.p": "Open your mouth to breathe it out, and turn your head to aim. Purse your lips to blow air instead.",
+    "mouth.open": "Mouth open", "mouth.opensens": "Opens easily", "mouth.blowing": "Blowing",
+    "mouth.blowsens": "Blows easily", "mouth.blowpower": "Blow strength",
+    "ck.blow": "Pursed lips blow air", "ck.mic": "Use the microphone, so blowing harder is stronger", "mic.label": "Microphone",
+    "bg.label": "Behind me", "bg.room": "My real room", "bg.studio": "Dark studio", "bg.city": "City at night",
+    "bg.volcano": "Volcano", "bg.icecave": "Ice cave", "bg.forest": "Forest at night", "bg.nebula": "Deep space",
+    "bg.upload": "My own picture…", "bg.dof": "Background blur", "bg.bright": "Background brightness",
+    "light.relight": "Light from the elements", "light.amb": "My own brightness", "light.shape": "Depth strength",
+    "light.view": "Show", "view.final": "Finished picture", "view.depth": "Depth map",
+    "view.normals": "Surface directions", "view.mask": "Body outline",
+    "power.size": "Size", "power.force": "Force", "power.magic": "Magic colour",
+    "ck.fist": "Closing your fist puts it out", "ck.flick": "A fast flick of the hand throws it",
+    "look.glow": "Glow", "look.smoke": "Smoke", "look.quality": "Detail",
+    "q.low": "Low (fastest)", "q.med": "Medium", "q.high": "High", "q.ultra": "Ultra",
+    "ui.clear": "Clear the air", "ui.record": "Record a clip", "ui.recordStop": "Stop and save",
+    "ui.showdata": "Show tracking data",
+    "foot": "A webcam has no depth sensor, so the depth map is estimated live from your body outline, the 478-point 3D mesh of your face and the 3D joints of your hands. The fire, mist, smoke and water are a fluid simulation on your graphics card. Video and sound are processed on this computer and never uploaded.",
+    "hint.fireice": "Hold up both open hands. Ice pours from your left palm and fire from your right. Bring them together and they turn to steam. Open your mouth to breathe fire.",
+    "hint.dragon": "Open your mouth to breathe fire. Turn your head to aim it. With the microphone on, a louder roar makes a bigger flame.",
+    "hint.frozen": "Hold up your left hand and watch it freeze over. Then open your mouth and breathe fire on it to melt the ice.",
+    "hint.candles": "Every finger you raise on your right hand lights a flame. Purse your lips and blow on them.",
+    "hint.storm": "Spread your fingers and lightning jumps between them. Bring both hands into view and it arcs from one to the other.",
+    "hint.water": "Point a finger to shoot water. A fast flick of an open hand throws a ball of it.",
+    "hint.wizard": "Magic in your left palm, a lightning bolt from your right index finger, and frost breath when you open your mouth.",
+    "hint.fireball": "Hold your right hand open and a fireball forms on your palm. Bring your left hand close to feed it, or slap it away. Flick to throw it, or push your palm at the camera to smash it into the screen.",
+    "hint.allOff": "Everything is off. Pick a preset, or choose an element for a hand, your palm or your mouth.",
+    "hint.custom": "Your own mix. Pick an element for each hand and for your mouth.",
+    "st.ask": "Asking for the camera…",
+    "st.trackers": "Loading the hand, face and body trackers (first time takes a few seconds)…",
+    "st.denied": "Camera blocked. Allow camera access for this page and click Start again.",
+    "st.loadFail": "Could not load the {stage}: {msg}",
+    "st.noCam": "this browser will not give this page a camera. Try Chrome or Edge.",
+    "st.err": "The tracker hit an error: {msg}",
+    "st.track2f": "Tracking both hands and your face.", "st.track2": "Tracking both hands.",
+    "st.track1f": "Tracking one hand and your face.", "st.track1": "Tracking one hand.",
+    "st.faceOnly": "Face found. Hold up a hand, or open your mouth.",
+    "st.noHand": "Hold up a hand where the camera can see it.",
+    "st.noSeg": "The body outline could not load, so the background and depth lighting are off.",
+    "st.demo": "Demo scene (no camera).",
+    "st.micBlocked": "Microphone blocked. Blowing still works from the shape of your lips.",
+    "st.notPic": "That file is not a picture this browser can open.",
+    "st.recFirst": "Start the camera first, then record.",
+    "st.noRec": "This browser cannot record video.",
+    "st.cannotStart": "Cannot start: {msg}",
+    "gl.noWebGL2": "this browser has no WebGL 2. Try a current Chrome, Edge, Firefox or Safari.",
+    "gl.noFloat": "this graphics card cannot run the fluid simulation.",
+    "stage.camera": "camera", "stage.trackers": "trackers",
+    "dt.left": "left", "dt.right": "right",
+    "dt.handL": "left hand", "dt.handR": "right hand", "dt.notFound": "not found",
+    "dt.frost": "frost {v}",
+    "dt.mouth": "mouth open", "dt.firesAt": "(fires at {v})",
+    "dt.lips": "lips pursed", "dt.narrower": "(narrower by {n}%)",
+    "dt.head": "head turned", "dt.toCam": "to the camera",
+    "dt.headL": "left {n}% (as you see it on screen)", "dt.headR": "right {n}% (as you see it on screen)",
+    "dt.face": "face", "dt.mic": "microphone",
+    "dt.body": "body outline", "dt.on": "on", "dt.reliefOn": ", face relief on", "dt.off": "off",
+    "dt.grid": "fluid grid", "dt.sparks": "sparks", "dt.speed": "speed", "dt.fps": "{n} frames/s"
+  },
+  zh: {
+    "title": "元素魔镜",
+    "intro.h2": "元素魔镜",
+    "intro.p": "火焰、寒冰、流水、闪电与魔法从你的双手和口中释放，照亮你的脸庞和身体。还可以更换身后的房间，吹动火焰，冻结一只手，再喷火把冰融化。",
+    "intro.start": "开启摄像头",
+    "st.intro": "点击「开启摄像头」，然后允许使用摄像头。",
+    "panel.try": "试试这个", "panel.L": "左手", "panel.R": "右手", "panel.ball": "掌心法球",
+    "panel.mouth": "嘴部", "panel.bg": "背景", "panel.light": "照在身上的光",
+    "panel.power": "威力", "panel.look": "外观",
+    "preset.fireice": "冰与火", "preset.dragon": "龙之吐息", "preset.frozen": "冰封与融化",
+    "preset.candles": "指尖蜡烛", "preset.storm": "风暴", "preset.water": "流水",
+    "preset.wizard": "法师", "preset.fireball": "火球", "ui.reset": "全部重置",
+    "el.off": "关闭", "el.fire": "火焰", "el.ice": "寒冰", "el.water": "流水", "el.bolt": "闪电", "el.magic": "魔法",
+    "src.label": "释放位置", "src.palm": "手掌", "src.index": "食指指尖",
+    "src.tips": "全部指尖", "src.whole": "整只手",
+    "ball.off": "关闭", "ball.fire": "火球", "ball.water": "水球", "ball.magic": "魔法球",
+    "ball.held": "托在", "hand.L": "左手", "hand.R": "右手",
+    "ball.p": "张开那只手，球就会在掌心凝聚。另一只手靠近可以喂它长大、戳它或把它拍飞。甩手把球抛出，或把手掌推向摄像头，把它砸在屏幕上。",
+    "mouth.p": "张开嘴吐出元素，转头即可瞄准。撅起嘴唇则改为吹气。",
+    "mouth.open": "张嘴程度", "mouth.opensens": "张嘴灵敏度", "mouth.blowing": "吹气",
+    "mouth.blowsens": "吹气灵敏度", "mouth.blowpower": "吹气力度",
+    "ck.blow": "撅嘴吹气", "ck.mic": "使用麦克风，吹得越用力效果越强", "mic.label": "麦克风",
+    "bg.label": "我身后", "bg.room": "我的真实房间", "bg.studio": "黑暗影棚", "bg.city": "夜晚城市",
+    "bg.volcano": "火山", "bg.icecave": "冰洞", "bg.forest": "夜晚森林", "bg.nebula": "深空",
+    "bg.upload": "我自己的图片…", "bg.dof": "背景虚化", "bg.bright": "背景亮度",
+    "light.relight": "元素发出的光", "light.amb": "自身亮度", "light.shape": "深度强度",
+    "light.view": "显示", "view.final": "最终画面", "view.depth": "深度图",
+    "view.normals": "表面朝向", "view.mask": "身体轮廓",
+    "power.size": "大小", "power.force": "力度", "power.magic": "魔法颜色",
+    "ck.fist": "握拳会将其熄灭", "ck.flick": "快速甩手可将其抛出",
+    "look.glow": "辉光", "look.smoke": "烟雾", "look.quality": "细节",
+    "q.low": "低（最快）", "q.med": "中", "q.high": "高", "q.ultra": "极高",
+    "ui.clear": "清空画面", "ui.record": "录制片段", "ui.recordStop": "停止并保存",
+    "ui.showdata": "显示追踪数据",
+    "foot": "摄像头没有深度传感器，深度图是根据你的身体轮廓、脸部的 478 点 3D 网格和双手的 3D 关节实时估算出来的。火焰、雾气、烟和水是显卡上运行的流体模拟。视频和声音只在这台电脑上处理，绝不会上传。",
+    "hint.fireice": "举起双手并张开：左手掌涌出寒冰，右手掌喷出火焰。双手靠近会化作蒸汽。张开嘴可以喷火。",
+    "hint.dragon": "张开嘴喷出火焰，转头即可瞄准。开启麦克风后，吼得越大声，火焰越猛。",
+    "hint.frozen": "举起左手，看着它被冰霜覆盖。再张开嘴对着它喷火，把冰融化。",
+    "hint.candles": "右手每伸出一根手指，就会点燃一簇火焰。撅起嘴吹口气，就能把它们吹动。",
+    "hint.storm": "张开手指，闪电在指尖跳跃。双手同时入镜时，电弧会在两手之间穿梭。",
+    "hint.water": "用手指指向前方即可射出水柱。快速甩一下张开的手，能抛出一颗水球。",
+    "hint.wizard": "左手掌托着魔法，右手食指放出闪电，张嘴则吐出寒霜之气。",
+    "hint.fireball": "张开右手，掌心会凝聚一颗火球。左手靠近可以喂它长大，也能把它拍飞。甩手将其抛出，或把手掌推向摄像头，把它砸在屏幕上。",
+    "hint.allOff": "当前全部关闭。选一个预设，或为手、掌心球或嘴选择一种元素。",
+    "hint.custom": "这是你的自选组合。可以为每只手和嘴分别选择元素。",
+    "st.ask": "正在请求摄像头权限…",
+    "st.trackers": "正在加载手部、面部和身体追踪器（首次需要几秒钟）…",
+    "st.denied": "摄像头被阻止。请允许本页面使用摄像头，然后重新点击开始。",
+    "st.loadFail": "无法加载{stage}：{msg}",
+    "st.noCam": "此浏览器无法向本页面提供摄像头。请尝试 Chrome 或 Edge。",
+    "st.err": "追踪器出错：{msg}",
+    "st.track2f": "正在追踪双手和你的面部。", "st.track2": "正在追踪双手。",
+    "st.track1f": "正在追踪一只手和你的面部。", "st.track1": "正在追踪一只手。",
+    "st.faceOnly": "已检测到面部。举起手，或张开嘴。",
+    "st.noHand": "把手举到摄像头能看到的地方。",
+    "st.noSeg": "身体轮廓加载失败，背景替换和深度光照已关闭。",
+    "st.demo": "演示场景（无需摄像头）。",
+    "st.micBlocked": "麦克风被阻止。仍可通过嘴唇形状判断吹气。",
+    "st.notPic": "该文件不是此浏览器能打开的图片。",
+    "st.recFirst": "请先开启摄像头，再录制。",
+    "st.noRec": "此浏览器无法录制视频。",
+    "st.cannotStart": "无法启动：{msg}",
+    "gl.noWebGL2": "此浏览器不支持 WebGL 2。请使用较新版本的 Chrome、Edge、Firefox 或 Safari。",
+    "gl.noFloat": "此显卡无法运行流体模拟。",
+    "stage.camera": "摄像头", "stage.trackers": "追踪器",
+    "dt.left": "左", "dt.right": "右",
+    "dt.handL": "左手", "dt.handR": "右手", "dt.notFound": "未检测到",
+    "dt.frost": "冰霜 {v}",
+    "dt.mouth": "张嘴程度", "dt.firesAt": "（达到 {v} 触发）",
+    "dt.lips": "撅嘴程度", "dt.narrower": "（收窄 {n}%）",
+    "dt.head": "头部朝向", "dt.toCam": "正对摄像头",
+    "dt.headL": "向左 {n}%（以画面为准）", "dt.headR": "向右 {n}%（以画面为准）",
+    "dt.face": "人脸", "dt.mic": "麦克风",
+    "dt.body": "身体轮廓", "dt.on": "开启", "dt.reliefOn": "，面部起伏开启", "dt.off": "关闭",
+    "dt.grid": "流体网格", "dt.sparks": "粒子", "dt.speed": "速度", "dt.fps": "{n} 帧/秒"
+  }
+};
+function t(key) { return (I18N[S.lang] && I18N[S.lang][key]) || I18N.en[key] || key; }
+function fmt(s, vars) { return s.replace(/\{(\w+)\}/g, (m, n) => vars && vars[n] !== undefined ? vars[n] : m); }
+function applyI18n() {
+  document.documentElement.lang = S.lang;
+  document.title = t("title");
+  for (const el of document.querySelectorAll("[data-i18n]")) el.textContent = t(el.dataset.i18n);
+  for (const b of $("langseg").children) b.classList.toggle("on", b.dataset.lang === S.lang);
+  $("record").textContent = $("record").classList.contains("on") ? t("ui.recordStop") : t("ui.record");
+  syncUI();
+  if (statusInfo) setStatus(statusInfo.key, statusInfo.vars, statusInfo.cls);
+}
 const SLIDERS = ["size", "force", "dof", "bgbright", "relight", "amb", "shape", "glow", "smoke", "mouthsens", "blowsens", "blowpower"];
 const CHECKS = ["blow", "fist", "flick", "showdata"], SELECTS = ["srcL", "srcR", "quality", "bg", "view", "ballHand"];
 const PRESETS = {
-  fireice: { L: "ice", srcL: "palm", R: "fire", srcR: "palm", M: "fire",
-             hint: "Hold up both open hands. Ice pours from your left palm and fire from your right. Bring them together and they turn to steam. Open your mouth to breathe fire." },
-  dragon:  { L: "off", R: "off", M: "fire",
-             hint: "Open your mouth to breathe fire. Turn your head to aim it. With the microphone on, a louder roar makes a bigger flame." },
-  frozen:  { L: "ice", srcL: "whole", R: "off", M: "fire",
-             hint: "Hold up your left hand and watch it freeze over. Then open your mouth and breathe fire on it to melt the ice." },
-  candles: { L: "off", R: "fire", srcR: "tips", M: "off", force: 0.05,
-             hint: "Every finger you raise on your right hand lights a flame. Purse your lips and blow on them." },
-  storm:   { L: "bolt", srcL: "tips", R: "bolt", srcR: "tips", M: "off",
-             hint: "Spread your fingers and lightning jumps between them. Bring both hands into view and it arcs from one to the other." },
-  water:   { L: "water", srcL: "index", R: "water", srcR: "index", M: "off", force: 0.6,
-             hint: "Point a finger to shoot water. A fast flick of an open hand throws a ball of it." },
-  wizard:  { L: "magic", srcL: "palm", R: "bolt", srcR: "index", M: "ice", force: 0.45,
-             hint: "Magic in your left palm, a lightning bolt from your right index finger, and frost breath when you open your mouth." },
-  fireball: { L: "off", R: "off", M: "off", ball: "fire", ballHand: "R",
-             hint: "Hold your right hand open and a fireball forms on your palm. Bring your left hand close to feed it, or slap it away. Flick to throw it, or push your palm at the camera to smash it into the screen." }
+  fireice: { L: "ice", srcL: "palm", R: "fire", srcR: "palm", M: "fire" },
+  dragon:  { L: "off", R: "off", M: "fire" },
+  frozen:  { L: "ice", srcL: "whole", R: "off", M: "fire" },
+  candles: { L: "off", R: "fire", srcR: "tips", M: "off", force: 0.05 },
+  storm:   { L: "bolt", srcL: "tips", R: "bolt", srcR: "tips", M: "off" },
+  water:   { L: "water", srcL: "index", R: "water", srcR: "index", M: "off", force: 0.6 },
+  wizard:  { L: "magic", srcL: "palm", R: "bolt", srcR: "index", M: "ice", force: 0.45 },
+  fireball: { L: "off", R: "off", M: "off", ball: "fire", ballHand: "R" }
 };
 function magicRGB() {
   const n = parseInt((S.magic || "#b56cff").slice(1), 16);
@@ -278,8 +455,8 @@ function syncUI() {
     for (const b of box.children) b.classList.toggle("on", b.dataset.el === S[box.dataset.key]);
   for (const b of $("presets").children) b.classList.toggle("on", b.dataset.preset === S.preset);
   const allOff = S.L === "off" && S.R === "off" && S.M === "off" && S.ball === "off";
-  $("hint").textContent = S.preset && PRESETS[S.preset] ? PRESETS[S.preset].hint
-    : allOff ? "Everything is off. Pick a preset, or choose an element for a hand, your palm or your mouth." : "Your own mix. Pick an element for each hand and for your mouth.";
+  $("hint").textContent = S.preset && PRESETS[S.preset] ? t("hint." + S.preset)
+    : allOff ? t("hint.allOff") : t("hint.custom");
   for (const k of SLIDERS) { $(k).value = S[k]; const v = $(k + "v"); if (v) v.textContent = Math.round(S[k] * 100) + "%"; }
   for (const k of CHECKS) $(k).checked = S[k];
   for (const k of SELECTS) $(k).value = S[k];
@@ -314,11 +491,13 @@ $("bgfile").onchange = e => {
   const f = e.target.files && e.target.files[0]; if (!f) return;
   const img = new Image();
   img.onload = () => { customBg = img; S.bg = "upload"; syncUI(); setBackground(); };
-  img.onerror = () => setStatus("That file is not a picture this browser can open.", "bad");
+  img.onerror = () => setStatus("st.notPic", null, "bad");
   img.src = URL.createObjectURL(f);
 };
 $("clear").onclick = () => clearAir();
+for (const b of $("langseg").children) b.onclick = () => { S.lang = b.dataset.lang; save(); applyI18n(); };
 syncUI();
+applyI18n();
 
 // ------------------------------ WebGL 2 set-up ------------------------------
 let gl = null, W = 640, H = 480, CW = 640, CH = 480;
@@ -696,9 +875,9 @@ function mkImageTex(rgba) {
 const MAXP = 5000, partData = new Float32Array(MAXP * 10), faceData = new Float32Array(468 * 3);
 function initGL() {
   gl = $("gl").getContext("webgl2", { alpha: false, antialias: false, depth: false, stencil: false, powerPreference: "high-performance" });
-  if (!gl) throw new Error("this browser has no WebGL 2. Try a current Chrome, Edge, Firefox or Safari.");
+  if (!gl) throw Object.assign(new Error("no WebGL 2"), { i18nKey: "gl.noWebGL2" });
   if (!gl.getExtension("EXT_color_buffer_float") && !gl.getExtension("EXT_color_buffer_half_float"))
-    throw new Error("this graphics card cannot run the fluid simulation.");
+    throw Object.assign(new Error("no float buffer"), { i18nKey: "gl.noFloat" });
   for (const k in FS) P[k] = k === "splat" ? mkProg(VS_SPLAT, FS[k]) : k === "face" ? mkProg(VS_FACE, FS[k], ["aV"])
     : k === "part" ? mkProg(VS_PART, FS[k], ["aPos", "iC", "iAx", "iW", "iCol", "iKind"]) : mkProg(VS, FS[k]);
   const quad = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, quad);
@@ -1454,7 +1633,7 @@ async function setMic(on) {
     an.fftSize = 1024; ctx.createMediaStreamSource(stream).connect(an);
     mic = { stream, ctx, an, buf: new Float32Array(1024), floor: 0.02, level: 0 };
     $("microw").hidden = false;
-  } catch (e) { $("mic").checked = false; setStatus("Microphone blocked. Blowing still works from the shape of your lips.", "bad"); }
+  } catch (e) { $("mic").checked = false; setStatus("st.micBlocked", null, "bad"); }
 }
 $("mic").onchange = e => setMic(e.target.checked);
 function micLevel() {
@@ -1538,7 +1717,7 @@ function drawHud(now) {
     for (const c of [[0,1,2,3,4],[0,5,6,7,8],[5,9,10,11,12],[9,13,14,15,16],[13,17,18,19,20],[0,17]]) {
       g.beginPath(); c.forEach((i, k) => k ? g.lineTo(h.P[i].x, h.P[i].y) : g.moveTo(h.P[i].x, h.P[i].y)); g.stroke(); }
     for (const p of h.P) { g.beginPath(); g.arc(p.x, p.y, 3, 0, 6.3); g.fill(); }
-    g.font = "600 13px system-ui,sans-serif"; g.fillText(h.id === "L" ? "left" : "right", h.P[0].x + 8, h.P[0].y + 16);
+    g.font = "600 13px system-ui,sans-serif"; g.fillText(t(h.id === "L" ? "dt.left" : "dt.right"), h.P[0].x + 8, h.P[0].y + 16);
   }
   if (face.found) { g.strokeStyle = "rgba(127,255,170,.9)"; g.fillStyle = "rgba(127,255,170,.9)";
     g.beginPath(); g.arc(face.x, face.y, 5, 0, 6.3); g.fill();
@@ -1546,15 +1725,15 @@ function drawHud(now) {
   if (now - dataAt > 120) {
     dataAt = now;
     const pad = k => (k + "             ").slice(0, 13), rows = [];
-    for (const h of [hands.L, hands.R]) rows.push([h.id === "L" ? "left hand" : "right hand",
-      h.vis ? h.ext.map(e => e > 0.5 ? "|" : ".").join("") + "  frost " + h.frost.toFixed(2) : "not found"]);
-    if (face.found) rows.push(["mouth open", face.open.toFixed(2) + "  (fires at " + mixn(0.45, 0.12, S.mouthsens).toFixed(2) + ")"],
-      ["lips pursed", face.pucker.toFixed(2) + "  (narrower by " + Math.round(face.narrow * 100) + "%)"],
-      ["head turned", Math.abs(face.dx) < 0.15 ? "to the camera" : (face.dx > 0 ? "right " : "left ") + Math.round(Math.abs(face.dx) * 100) + "% (as you see it on screen)"]);
-    else rows.push(["face", "not found"]);
-    if (mic) rows.push(["microphone", mic.level.toFixed(2)]);
-    rows.push(["body outline", body.has ? "on" + (body.hasRelief ? ", face relief on" : "") : "off"], ["fluid grid", gridKey.split("/").slice(0, 2).join(" / ")],
-      ["sparks", String(parts.length)], ["speed", fps + " frames/s"]);
+    for (const h of [hands.L, hands.R]) rows.push([h.id === "L" ? t("dt.handL") : t("dt.handR"),
+      h.vis ? h.ext.map(e => e > 0.5 ? "|" : ".").join("") + "  " + fmt(t("dt.frost"), { v: h.frost.toFixed(2) }) : t("dt.notFound")]);
+    if (face.found) rows.push([t("dt.mouth"), face.open.toFixed(2) + "  " + fmt(t("dt.firesAt"), { v: mixn(0.45, 0.12, S.mouthsens).toFixed(2) })],
+      [t("dt.lips"), face.pucker.toFixed(2) + "  " + fmt(t("dt.narrower"), { n: Math.round(face.narrow * 100) })],
+      [t("dt.head"), Math.abs(face.dx) < 0.15 ? t("dt.toCam") : fmt(t(face.dx > 0 ? "dt.headR" : "dt.headL"), { n: Math.round(Math.abs(face.dx) * 100) })]);
+    else rows.push([t("dt.face"), t("dt.notFound")]);
+    if (mic) rows.push([t("dt.mic"), mic.level.toFixed(2)]);
+    rows.push([t("dt.body"), body.has ? t("dt.on") + (body.hasRelief ? t("dt.reliefOn") : "") : t("dt.off")], [t("dt.grid"), gridKey.split("/").slice(0, 2).join(" / ")],
+      [t("dt.sparks"), String(parts.length)], [t("dt.speed"), fmt(t("dt.fps"), { n: fps })]);
     $("data").textContent = rows.map(r => pad(r[0]) + r[1]).join("\n");
   }
 }
@@ -1562,8 +1741,8 @@ function drawHud(now) {
 // ------------------------------ recording ------------------------------
 $("record").onclick = () => {
   if (rec) { rec.mr.stop(); return; }
-  if (!gl || $("gl").hidden) { setStatus("Start the camera first, then record.", "bad"); return; }
-  if (!window.MediaRecorder) { setStatus("This browser cannot record video.", "bad"); return; }
+  if (!gl || $("gl").hidden) { setStatus("st.recFirst", null, "bad"); return; }
+  if (!window.MediaRecorder) { setStatus("st.noRec", null, "bad"); return; }
   const c = document.createElement("canvas"); c.width = $("gl").width; c.height = $("gl").height;
   const mime = ["video/mp4;codecs=avc1.42E01E", "video/webm;codecs=vp9", "video/webm"].find(m => MediaRecorder.isTypeSupported(m)) || "";
   const mr = new MediaRecorder(c.captureStream(30), mime ? { mimeType: mime, videoBitsPerSecond: 10e6 } : undefined), chunks = [];
@@ -1572,10 +1751,10 @@ $("record").onclick = () => {
     const blob = new Blob(chunks, { type: mr.mimeType || "video/webm" }), a = document.createElement("a");
     a.href = URL.createObjectURL(blob); a.download = "elemental-mirror." + ((mr.mimeType || "").includes("mp4") ? "mp4" : "webm");
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-    rec = null; $("recdot").hidden = true; $("record").textContent = "Record a clip"; $("record").classList.remove("on");
+    rec = null; $("recdot").hidden = true; $("record").textContent = t("ui.record"); $("record").classList.remove("on");
   };
   rec = { c, g: c.getContext("2d"), mr, t0: performance.now() };
-  mr.start(); $("recdot").hidden = false; $("record").textContent = "Stop and save"; $("record").classList.add("on");
+  mr.start(); $("recdot").hidden = false; $("record").textContent = t("ui.recordStop"); $("record").classList.add("on");
 };
 
 // ------------------------------ start-up ------------------------------
@@ -1641,8 +1820,8 @@ function runSegmenter(now, hadFace) {
   });
 }
 function liveLoop() {
-  let lastTime = -1, last = performance.now(), said = "", vf = 0;
-  const say = (t, c) => { if (said !== t) { said = t; setStatus(t, c); } };
+  let lastTime = -1, last = performance.now(), said = "", vf = 0, errLock = false;
+  const say = (txt, c) => { if (said !== txt) { said = txt; setStatusRaw(txt, c); } };
   $("gl").hidden = false;
   function tick() {
     requestAnimationFrame(tick);
@@ -1659,12 +1838,14 @@ function liveLoop() {
         }
         if (segmenter && (S.quality !== "low" || vf % 2 === 0)) runSegmenter(now, hadFace);
         bodyUpdate(now);
-      } catch (e) { say("The tracker hit an error: " + e.message, "bad"); }
+      } catch (e) { say(fmt(t("st.err"), { msg: e.message }), "bad"); errLock = true; }
     }
     const n = (hands.L.vis ? 1 : 0) + (hands.R.vis ? 1 : 0);
-    if (!said.startsWith("The tracker hit")) say((n ? "Tracking " + (n === 2 ? "both hands" : "one hand") + (face.found ? " and your face." : ".")
-      : face.found ? "Face found. Hold up a hand, or open your mouth." : "Hold up a hand where the camera can see it.")
-      + (segmenter ? "" : " The body outline could not load, so the background and depth lighting are off."), n || face.found ? "ok" : "");
+    if (!errLock) {
+      const key = n ? (n === 2 ? (face.found ? "st.track2f" : "st.track2") : (face.found ? "st.track1f" : "st.track1"))
+                    : (face.found ? "st.faceOnly" : "st.noHand");
+      say(t(key) + (segmenter ? "" : " " + t("st.noSeg")), n || face.found ? "ok" : "");
+    }
     frame(now, dt);
   }
   tick();
@@ -1684,7 +1865,7 @@ function demoHand(cx, cy, sc, ang, curl, flip) {
 function demoLoop() {
   $("intro").hidden = true; $("gl").hidden = false;
   stage.style.setProperty("--ar", "1.7778"); resize(true);
-  setStatus("Demo scene (no camera).", "ok");
+  setStatus("st.demo", null, "ok");
   const sc = QS.get("scene"); if (sc && PRESETS[sc]) { for (const k in PRESETS[sc]) if (k !== "hint") S[k] = PRESETS[sc][k]; S.preset = sc; }
   for (const k of ["L", "R", "M", "srcL", "srcR", "quality", "bg", "view", "ball", "ballHand"]) if (QS.get(k)) S[k] = QS.get(k);
   for (const k of SLIDERS) if (QS.get(k)) S[k] = parseFloat(QS.get(k));
@@ -1738,32 +1919,31 @@ function demoLoop() {
 
 new ResizeObserver(() => resize()).observe(stage);
 let glError = null;
-try { initGL(); resize(true); setBackground(); } catch (e) { glError = e; setStatus("Cannot start: " + e.message, "bad"); $("start").disabled = true; }
+try { initGL(); resize(true); setBackground(); } catch (e) { glError = e; setStatus("st.cannotStart", { msg: e.i18nKey ? t(e.i18nKey) : e.message }, "bad"); $("start").disabled = true; }
 
 $("start").onclick = async () => {
   $("start").disabled = true;
-  let stageName = "camera";
+  let stageName = "stage.camera";
   try {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia)
-      throw new Error("this browser will not give this page a camera. Try Chrome or Edge.");
-    setStatus("Asking for the camera…");
+      throw Object.assign(new Error("no camera"), { i18nKey: "st.noCam" });
+    setStatus("st.ask");
     const stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
     video.srcObject = stream;
     await video.play();
     if (video.videoWidth && video.videoHeight) stage.style.setProperty("--ar", (video.videoWidth / video.videoHeight).toFixed(4));
     $("intro").hidden = true;
-    stageName = "trackers";
-    setStatus("Loading the hand, face and body trackers (first time takes a few seconds)…");
+    stageName = "stage.trackers";
+    setStatus("st.trackers");
     await loadTrackers();
     resize(true);
     liveLoop();
   } catch (err) {
     $("start").disabled = false; $("intro").hidden = false;
     const denied = err && (err.name === "NotAllowedError" || err.name === "SecurityError");
-    const msg = err && err.message ? err.message : String(err);
-    setStatus(denied ? "Camera blocked. Allow camera access for this page and click Start again."
-            : "Could not load the " + stageName + ": " + msg, "bad");
+    const msg = err && err.i18nKey ? t(err.i18nKey) : err && err.message ? err.message : String(err);
+    setStatus(denied ? "st.denied" : "st.loadFail", denied ? null : { stage: t(stageName), msg }, "bad");
   }
 };
 
